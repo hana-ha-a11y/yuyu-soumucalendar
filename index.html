@@ -1,0 +1,2559 @@
+<style>
+  :root {
+    --bg: #F3F5F7;
+    --surface: #FFFFFF;
+    --surface-alt: #FAFBFC;
+    --text: #1C2430;
+    --text-muted: #6B7280;
+    --border: #E3E6EA;
+    --routine: #2F6D6E;
+    --routine-soft: #E3EEEE;
+    --kpi: #A9720F;
+    --kpi-soft: #F6EBD8;
+    --kdi: #2E6FB0;
+    --kdi-soft: #DCE9F5;
+    --adhoc: #675795;
+    --adhoc-soft: #ECE9F5;
+    --other: #7C828B;
+    --other-soft: #EEEFF1;
+    --warn: #AD3B2E;
+    --warn-soft: #F8E7E4;
+    --ok: #2E7D46;
+    --ok-soft: #E5F2E8;
+    --off: #C9CDD3;
+    --off-soft: #F1F2F4;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  #app { max-width: 1220px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  header.top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .title-block h1 { font-size: 21px; font-weight: 700; margin: 0 0 2px; letter-spacing: 0.01em; }
+  .title-block p { margin: 0; color: var(--text-muted); font-size: 12.5px; }
+  .month-nav {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 8px;
+  }
+  .month-nav button {
+    width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent;
+    color: var(--text); font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .month-nav button:hover { background: var(--other-soft); }
+  .month-nav .label { font-weight: 700; font-size: 15px; min-width: 92px; text-align: center; font-variant-numeric: tabular-nums; }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
+    height: 34px; padding: 0 12px; cursor: pointer; font-size: 12.5px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .icon-btn:hover { color: var(--text); border-color: #C7CCD3; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; font-size: 12px; color: var(--text-muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .month-summary {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 28px; flex-wrap: wrap; align-items: center;
+  }
+  .stat { text-align: left; }
+  .stat .num { font-family: var(--mono); font-size: 20px; font-weight: 600; }
+  .stat .lbl { font-size: 11.5px; color: var(--text-muted); }
+
+  .week-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 18px; overflow: hidden; }
+  .week-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+  .week-head .range { font-weight: 700; font-size: 13.5px; }
+  .gapbar-wrap { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+  .gapbar { width: 160px; height: 8px; border-radius: 4px; background: var(--other-soft); position: relative; overflow: hidden; }
+  .gapbar .planned-fill { position: absolute; inset: 0; background: #D8DEE3; }
+  .gapbar .actual-fill { position: absolute; top:0; bottom:0; left:0; background: var(--routine); }
+  .gapbar.warn .actual-fill { background: var(--warn); }
+  .gapbar.ok .actual-fill { background: var(--ok); }
+
+  table.week-grid { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.week-grid th, table.week-grid td { border-top: 1px solid var(--border); padding: 6px 6px; vertical-align: top; text-align: left; }
+  table.week-grid th { background: var(--surface-alt); color: var(--text-muted); font-weight: 600; font-size: 11.5px; }
+  table.week-grid th.member-col, table.week-grid td.member-col { width: 100px; font-weight: 700; color: var(--text); background: var(--surface-alt); }
+  .member-goal-preview { font-weight: 400; font-size: 10.5px; color: var(--kpi); margin-top: 3px; white-space: normal; line-height: 1.3; }
+  .weekly-goal-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .weekly-goal-row input[type=checkbox] { width:16px; height:16px; flex-shrink:0; }
+  .weekly-goal-row .goal-text { flex:1; border:1px solid var(--border); border-radius:6px; padding:6px 9px; font-size:12.5px; font-family:var(--sans); background:var(--surface); color:var(--text); }
+  .weekly-goal-row .goal-del { flex-shrink:0; }
+  td.day-cell { cursor: pointer; min-width: 108px; }
+  td.day-cell:hover { background: #F5F8F8; }
+  td.day-cell.muted { opacity: 0.4; }
+  td.day-cell.offday { background: var(--off-soft); }
+  .cell-empty { color: #B9BFC6; font-size: 16px; }
+  .cell-off { color: var(--other); font-size: 11.5px; font-weight: 600; }
+  .cell-dots { display: flex; gap: 3px; margin-bottom: 3px; }
+  .cell-hours { font-family: var(--mono); font-size: 11.5px; }
+  .cell-hours .gap-warn { color: var(--warn); font-weight: 700; }
+  .cell-hours .gap-ok { color: var(--ok); font-weight: 700; }
+  .day-num { color: var(--text-muted); font-weight: 600; }
+  .lock-mark { font-size: 10.5px; }
+
+  .week-wrap { overflow-x: auto; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(28,36,48,0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .overlay.hidden { display: none; }
+  .modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 680px; max-height: 86vh; overflow-y: auto; padding: 22px 24px 20px; }
+  .modal.narrow { max-width: 460px; }
+  .modal h2 { margin: 0 0 2px; font-size: 16px; }
+  .modal .sub { color: var(--text-muted); font-size: 12.5px; margin-bottom: 16px; }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 78px 1fr 56px 56px 30px 28px;
+    gap: 5px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+  .item-row input, .item-row select {
+    width: 100%; border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 6px; font-size: 12px; font-family: var(--sans);
+    background: var(--surface); color: var(--text);
+  }
+  .item-row input[type=number] { font-family: var(--mono); text-align: right; }
+  .priv-toggle { display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; }
+  .priv-toggle.active { color: var(--adhoc); }
+  .priv-toggle:not(.active) { color: #C7CCD3; }
+  .item-url-row { margin: 4px 0 4px 84px; display:flex; flex-direction:column; gap:5px; }
+  .url-line { display:flex; align-items:center; gap:6px; }
+  .url-line .f-url { flex:1; border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:11.5px; font-family:var(--sans); background:var(--surface-alt); color:var(--text); }
+  .url-open-btn {
+    font-size:11px; font-weight:700; color:var(--routine); border:1px solid var(--routine); border-radius:6px;
+    padding:5px 10px; text-decoration:none; white-space:nowrap;
+  }
+  .url-open-btn.disabled { color:var(--text-muted); border-color:var(--border); pointer-events:none; opacity:0.6; }
+  .add-url-btn {
+    align-self:flex-start; border:1px dashed #C7CCD3; background:transparent; color:var(--text-muted);
+    border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer;
+  }
+  .add-url-btn:hover { border-color:var(--routine); color:var(--routine); }
+  .item-memo-row { grid-column: 1 / -1; margin: -3px 0 10px 84px; }
+  .item-memo-row input { width: 100%; border: 1px dashed var(--border); background: var(--surface-alt); color: var(--text); }
+  .item-comembers-row { margin: -6px 0 14px 84px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .comember-label { font-size:11px; color:var(--text-muted); }
+  .comember-chip { font-size:11.5px; color:var(--text-muted); background:var(--surface-alt); border:1px solid var(--border); border-radius:999px; padding:2px 9px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
+  .comember-chip input { margin:0; }
+  .locked-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    background: var(--other-soft); border-radius: 8px; margin-bottom: 8px; font-size: 12.5px; color: var(--text-muted);
+  }
+  .locked-row .del-btn { margin-left: auto; }
+  .del-btn { border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 16px; }
+  .del-btn:hover { color: var(--warn); }
+  .add-item-btn {
+    border: 1px dashed #C7CCD3; background: transparent; color: var(--text-muted);
+    border-radius: 8px; padding: 8px 12px; font-size: 12.5px; cursor: pointer; width: 100%; margin: 6px 0 16px;
+  }
+  .add-item-btn:hover { border-color: var(--routine); color: var(--routine); }
+  .priv-note { font-size: 11px; color: var(--text-muted); margin: -10px 0 14px; }
+  .modal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px; }
+  .day-total { font-size: 12.5px; color: var(--text-muted); font-family: var(--mono); }
+  .btn { border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  .btn.primary { background: var(--routine); color: #fff; }
+  .btn.primary:hover { background: #244F50; }
+  .btn.ghost { background: transparent; color: var(--text-muted); }
+  .btn.ghost:hover { color: var(--text); }
+  .btn.small { padding: 5px 10px; font-size: 11.5px; }
+
+  .member-row { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .member-row .top-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .weekday-toggles { display: flex; gap: 4px; }
+  .wd-chip {
+    width: 26px; height: 22px; border-radius: 5px; border: 1px solid var(--border); background: var(--surface);
+    font-size: 10.5px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .wd-chip.off { background: var(--off); color: #fff; border-color: var(--off); }
+  .wd-note { font-size: 10.5px; color: var(--text-muted); margin-top: -2px; }
+  .member-add { display: flex; gap: 8px; margin-top: 14px; }
+  .member-add input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); background: var(--surface); color: var(--text); }
+
+  .standby-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .standby-row .name { font-weight: 600; flex: 1; }
+  .standby-row .note { color: var(--text-muted); font-size: 11.5px; flex: 1.3; }
+  .standby-add { display: flex; gap: 8px; margin-top: 14px; }
+  .standby-add input { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-family: var(--sans); background: var(--surface); color: var(--text); }
+  .standby-add input.name { flex: 1; }
+  .standby-add input.note { flex: 1.3; }
+  .preset-tab {
+    border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+    padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text-muted);
+  }
+  .preset-tab.active { background: var(--routine); color: #fff; border-color: var(--routine); }
+
+  .loading-note { color: var(--text-muted); font-size: 13px; padding: 40px 0; text-align: center; }
+  .save-toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff; padding: 9px 18px; border-radius: 999px;
+    font-size: 12.5px; opacity: 0; transition: opacity 0.25s; pointer-events: none;
+  }
+  .save-toast.show { opacity: 0.92; }
+
+  .charts-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; flex: 1 1 380px; min-width: 300px;
+  }
+  .chart-card h3 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text); }
+  .chart-card .chart-wrap { position: relative; height: 220px; }
+  .chart-empty { color: var(--text-muted); font-size: 12.5px; text-align: center; padding: 70px 0; }
+
+  .kpi-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--kpi-soft); color: var(--kpi); border-radius: 999px;
+    padding: 3px 10px; font-size: 11.5px; font-weight: 700;
+  }
+  .eff-badge { border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; }
+  .eff-badge.good { background: var(--ok-soft); color: var(--ok); }
+  .eff-badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .eff-badge.neutral { background: var(--other-soft); color: var(--text-muted); }
+</style>
+<style>
+  :root {
+    --bg: #F3F5F7;
+    --surface: #FFFFFF;
+    --text: #1C2430;
+    --text-muted: #6B7280;
+    --border: #E3E6EA;
+    --routine: #2F6D6E;
+    --routine-soft: #E3EEEE;
+    --kpi: #A9720F;
+    --kpi-soft: #F6EBD8;
+    --kdi: #2E6FB0;
+    --kdi-soft: #DCE9F5;
+    --adhoc: #675795;
+    --adhoc-soft: #ECE9F5;
+    --warn: #AD3B2E;
+    --warn-soft: #F8E7E4;
+    --ok: #2E7D46;
+    --ok-soft: #E5F2E8;
+    --other: #7C828B;
+    --other-soft: #EEEFF1;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.55; }
+  #app { max-width: 1080px; margin:0 auto; padding:24px 20px 100px; }
+
+  header.top { margin-bottom: 18px; }
+  header.top h1 { font-size:21px; font-weight:700; margin:0 0 2px; }
+  header.top p { margin:0; color:var(--text-muted); font-size:12.5px; }
+  #syncStatus { font-size:11.5px; color:var(--text-muted); }
+
+  .tabbar { display:flex; flex-wrap:wrap; gap:6px; margin: 16px 0 18px; }
+  .tab-btn {
+    border:1px solid var(--border); background:var(--surface); border-radius:999px;
+    padding:7px 16px; font-size:13px; cursor:pointer; color:var(--text-muted); font-weight:600;
+  }
+  .tab-btn.active { background:var(--routine); color:#fff; border-color:var(--routine); }
+  .tab-btn.summary { border-style:dashed; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; margin-bottom:16px; }
+  .card h2 { font-size:14px; margin:0 0 4px; }
+  .card .desc { color:var(--text-muted); font-size:11.5px; margin:0 0 12px; }
+
+  .field-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .field { display:flex; flex-direction:column; gap:4px; }
+  .field label { font-size:11px; color:var(--text-muted); font-weight:600; }
+  .field input, .field select, .field textarea {
+    border:1px solid var(--border); border-radius:7px; padding:7px 9px; font-family:var(--sans); font-size:13px;
+    background:var(--surface-alt); color:var(--text);
+  }
+  .field textarea { resize: vertical; min-height:56px; font-family:var(--sans); }
+  .field.grow { flex:1; min-width:220px; }
+
+  .status-select.未着手 { color:var(--other); }
+  .status-select.進行中 { color:var(--routine); }
+  .status-select.完了 { color:var(--ok); }
+  .status-select.遅延 { color:var(--warn); }
+
+  .axis-group { margin-bottom: 14px; }
+  .axis-group-title {
+    display:inline-block; background:var(--kpi-soft); color:var(--kpi); font-weight:700; font-size:12px;
+    padding:3px 12px; border-radius:999px; margin-bottom:8px;
+  }
+  .item-card {
+    border:1px solid var(--border); border-radius:9px; padding:12px 14px; margin-bottom:10px; background:var(--surface-alt); position:relative;
+  }
+  .item-card .del-btn {
+    position:absolute; top:8px; right:10px; border:none; background:transparent; color:var(--text-muted);
+    font-size:16px; cursor:pointer;
+  }
+  .item-card .del-btn:hover { color: var(--warn); }
+
+  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .badge.未着手 { background:var(--other-soft); color:var(--other); }
+  .badge.進行中 { background:var(--routine-soft); color:var(--routine); }
+  .badge.完了 { background:var(--ok-soft); color:var(--ok); }
+  .badge.遅延 { background:var(--warn-soft); color:var(--warn); }
+
+  .add-btn {
+    border:1px dashed #C7CCD3; background:transparent; color:var(--text-muted); border-radius:8px;
+    padding:8px 14px; font-size:12.5px; cursor:pointer; width:100%; margin-top:2px;
+  }
+  .add-btn:hover { border-color:var(--routine); color:var(--routine); }
+
+  .save-bar {
+    position:sticky; bottom:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:10px 16px; display:flex; align-items:center; justify-content:space-between; margin-top:8px;
+    box-shadow: 0 -4px 14px rgba(0,0,0,0.04);
+  }
+  .dirty-note { font-size:12px; color:var(--kpi); }
+  .btn { border:none; border-radius:8px; padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer; }
+  .btn.primary { background:var(--routine); color:#fff; }
+  .btn.primary:hover { background:#244F50; }
+  .btn.ghost { background:transparent; color:var(--text-muted); }
+
+  table.summary-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.summary-table th, table.summary-table td { border-top:1px solid var(--border); padding:8px 8px; text-align:left; vertical-align:top; }
+  table.summary-table th { background:var(--surface-alt); color:var(--text-muted); font-size:11.5px; }
+  .member-head { font-weight:700; }
+
+  textarea.review-cell { width:100%; min-height:52px; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-family:var(--sans); font-size:12px; background:var(--surface-alt); color:var(--text); }
+  table.review-table { width:100%; border-collapse:collapse; font-size:12px; }
+  table.review-table th, table.review-table td { border:1px solid var(--border); padding:6px; vertical-align:top; }
+  table.review-table th { background:var(--surface-alt); color:var(--text-muted); font-weight:600; font-size:11px; }
+
+  .loading-note { color:var(--text-muted); font-size:13px; padding:50px 0; text-align:center; }
+  .save-toast {
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    background:var(--text); color:#fff; padding:9px 18px; border-radius:999px; font-size:12.5px;
+    opacity:0; transition:opacity .25s; pointer-events:none;
+  }
+  .save-toast.show { opacity:.92; }
+
+/* ---- ページ切替ナビ ---- */
+.page-switch { display:flex; align-items:center; gap:8px; max-width:1220px; margin:0 auto; padding:14px 20px 0; }
+.page-tab { border:1px solid var(--border); background:var(--surface); border-radius:999px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; color:var(--text-muted); }
+.page-tab.active { background:var(--text); color:#fff; border-color:var(--text); }
+.page-sync { margin-left:auto; font-size:11.5px; color:var(--text-muted); }
+.mini-tab { border:1px solid var(--border); background:var(--surface); border-radius:999px; padding:5px 12px; font-size:11.5px; font-weight:700; cursor:pointer; color:var(--text-muted); }
+.mini-tab.active { background:var(--adhoc); color:#fff; border-color:var(--adhoc); }
+
+.theme-swatch {
+  border: 2px solid var(--border); border-radius: 12px; padding: 10px 12px; cursor: pointer;
+  width: 130px; text-align: left; font-family: var(--sans);
+}
+.theme-swatch.active { border-color: var(--routine); box-shadow: 0 0 0 2px var(--routine-soft); }
+.theme-swatch .swatch-name { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.theme-swatch .swatch-colors { display: flex; gap: 4px; }
+.theme-swatch .swatch-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.08); }
+</style>
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="page-switch" id="pageSwitch">
+  <button class="page-tab active" data-page="calendar">📅 月次カレンダー</button>
+  <button class="page-tab" data-page="personal">🧑 個人カレンダー</button>
+  <button class="page-tab" data-page="goals">🎯 KGI・KPI・KDI</button>
+  <button class="page-tab" data-page="analytics">📊 詳細分析</button>
+  <button class="mini-tab" id="openThemeBtn" style="margin-left:6px;">🎨 デザイン</button>
+  <span class="page-sync" id="syncStatus">● 接続中…</span>
+</div>
+
+<div class="overlay hidden" id="themeOverlay">
+  <div class="modal narrow">
+    <h2>デザイン設定</h2>
+    <p class="sub">この設定は、今お使いのブラウザだけに保存される個人設定です。</p>
+    <div id="themePresetList" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px;"></div>
+    <div class="field" style="margin-bottom:16px;">
+      <label>アクセントカラー（ボタンや強調表示の色）</label>
+      <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+        <input type="color" id="themeAccentPicker" style="width:44px; height:34px; border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+        <button class="btn ghost" id="themeAccentReset" style="padding:6px 12px; font-size:12px;">プリセットの色に戻す</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:6px;">
+      <label>文字サイズ</label>
+      <div id="fontScaleList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end;">
+      <button class="btn ghost" id="closeTheme">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="title-block">
+      <h1>月次計画カレンダー</h1>
+      <p>週初めに計画を入れて、週終わりに実績を追記 → ギャップを可視化します</p>
+    </div>
+    <div class="header-actions">
+      <div class="month-nav">
+        <button id="prevMonth">‹</button>
+        <span class="label" id="monthLabel">-</span>
+        <button id="nextMonth">›</button>
+      </div>
+      <button class="icon-btn" id="openStandby">📋 タスク登録リスト</button>
+      <button class="icon-btn" id="openMembers">⚙ メンバー・休日設定</button>
+      <button class="icon-btn" id="exportBtn">⬇ エクスポート</button>
+      <button class="icon-btn" id="importBtn">⬆ インポート</button>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+    </div>
+  </header>
+
+  <div class="legend" id="legend"></div>
+  <div class="month-summary" id="monthSummary"></div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>カテゴリ別 工数内訳（計画 vs 実績）</h3>
+      <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>週ごとの 計画 vs 実績</h3>
+      <div class="chart-wrap"><canvas id="weeklyChart"></canvas></div>
+    </div>
+  </div>
+  <div id="weeksContainer"><div class="loading-note">読み込み中…</div></div>
+</div>
+
+<div id="personalPage" style="display:none">
+  <header class="top">
+    <div class="title-block">
+      <h1>個人カレンダー</h1>
+      <p>週初めに「週の目標」を立て、週終わりに振り返って達成度を記録できます</p>
+    </div>
+    <div class="header-actions">
+      <div class="field" style="margin:0;">
+        <label style="font-size:11px; color:var(--text-muted); font-weight:600;">表示するメンバー</label>
+        <select id="personalMemberSelect" style="border:1px solid var(--border); border-radius:7px; padding:7px 10px; font-size:13px; background:var(--surface); color:var(--text);"></select>
+      </div>
+      <div class="month-nav">
+        <button id="personalPrevMonth">‹</button>
+        <span class="label" id="personalMonthLabel">-</span>
+        <button id="personalNextMonth">›</button>
+      </div>
+    </div>
+  </header>
+  <div class="legend" id="personalLegend"></div>
+  <div class="month-summary" id="personalMonthSummary"></div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>カテゴリ別 工数内訳（計画 vs 実績）</h3>
+      <div class="chart-wrap"><canvas id="personalCategoryChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>週ごとの 計画 vs 実績</h3>
+      <div class="chart-wrap"><canvas id="personalWeeklyChart"></canvas></div>
+    </div>
+  </div>
+  <div id="personalWeeksContainer"><div class="loading-note">読み込み中…</div></div>
+</div>
+
+
+<div id="goalsPage" style="display:none">
+  <header class="top">
+    <div class="title-block">
+      <h1>KGI・KPI・KDI 目標設定</h1>
+      <p>目標を設定し、進捗ステータスを更新していくためのツールです</p>
+    </div>
+  </header>
+  <div class="tabbar" id="tabbar"></div>
+  <div id="content"><div class="loading-note">読み込み中…</div></div>
+</div>
+
+<div id="analyticsPage" style="display:none">
+  <header class="top">
+    <div class="title-block">
+      <h1>詳細分析</h1>
+      <p>月次カレンダーで表示している月と連動して、人別・タスク別の内訳を表示します</p>
+    </div>
+  </header>
+  <div class="chart-card" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:2px;">
+      <h3 style="margin:0;">人別 工数内訳（計画 vs 実績）</h3>
+      <div style="display:flex; gap:6px;">
+        <button class="mini-tab member-mode-btn active" data-mode="month">月次</button>
+        <button class="mini-tab member-mode-btn" data-mode="year">年間合計</button>
+      </div>
+    </div>
+    <p class="desc" id="memberChartPeriodLabel" style="margin:2px 0 8px;"></p>
+    <div class="chart-wrap"><canvas id="memberChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>▌ タスク別 明細</h2>
+    <p class="desc">この月に入力された全タスクの一覧です（🔒非公開のタスクは内容が伏せられます）</p>
+    <div class="field-row" style="margin-bottom:10px;">
+      <div class="field"><label>メンバー</label><select id="taskFilterMember"><option value="">すべて</option></select></div>
+      <div class="field"><label>カテゴリ</label><select id="taskFilterCategory"><option value="">すべて</option></select></div>
+    </div>
+
+    <h3 style="font-size:12.5px; margin:14px 0 8px; color:var(--text-muted);">同じタスク名で集計</h3>
+    <div style="overflow-x:auto; margin-bottom:18px;"><table class="summary-table" id="taskGroupedTable"></table></div>
+
+    <h3 style="font-size:12.5px; margin:14px 0 8px; color:var(--text-muted);">明細（1件ずつ）</h3>
+    <div style="overflow-x:auto;"><table class="summary-table" id="taskDetailTable"></table></div>
+  </div>
+</div>
+
+<datalist id="presetList_teikei"></datalist>
+<datalist id="presetList_kpi"></datalist>
+<datalist id="presetList_kdi"></datalist>
+<datalist id="presetList_zuiji"></datalist>
+<datalist id="presetList_other"></datalist>
+
+<div class="overlay hidden" id="dayOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">-</h2>
+    <p class="sub" id="modalSub">-</p>
+    <div id="itemsContainer"></div>
+    <button class="add-item-btn" id="addItemBtn">＋ タスクを追加</button>
+    <div class="modal-footer">
+      <span class="day-total" id="dayTotal">-</span>
+      <div>
+        <button class="btn ghost" id="cancelDay">キャンセル</button>
+        <button class="btn primary" id="saveDay">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="memberOverlay">
+  <div class="modal narrow">
+    <h2>メンバー・休日設定</h2>
+    <p class="sub">曜日をタップすると休みON/OFFが切り替わります。休みの日はカレンダーに自動で「休み」と表示されます。</p>
+    <div id="memberList"></div>
+    <div class="member-add">
+      <input type="text" id="newMemberInput" placeholder="新しいメンバー名">
+      <button class="btn primary" id="addMemberBtn">追加</button>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end;">
+      <button class="btn ghost" id="closeMembers">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="standbyOverlay">
+  <div class="modal narrow">
+    <h2>タスク登録リスト（カテゴリ別プリセット）</h2>
+    <p class="sub">カテゴリごとに「よく使うタスク」を登録しておくと、日々の入力時にそのカテゴリを選んだ時だけ候補として選べます。</p>
+    <div class="preset-tabs" id="presetTabs" style="display:flex; gap:6px; margin-bottom:12px;"></div>
+    <div id="standbyListEl"></div>
+    <div class="standby-add" style="flex-wrap:wrap;">
+      <input type="text" class="name" id="newStandbyName" placeholder="業務名（例：入社・退職対応）">
+      <input type="text" class="note" id="newStandbyNote" placeholder="参照先・メモ（任意）">
+      <button class="btn primary" id="addStandbyBtn">追加</button>
+    </div>
+    <div id="newStandbyUrlsContainer" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;"></div>
+    <div class="modal-footer" style="justify-content:flex-end;">
+      <button class="btn ghost" id="closeStandby">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">保存しました</div>
+
+<script>
+(function(){
+  // ==========================================================
+  // Firebase 初期化
+  // ==========================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyDNEu03zy_BZOzbIMEy5k2olmNmhI6wgjk",
+    authDomain: "taskukanri.firebaseapp.com",
+    projectId: "taskukanri",
+    storageBucket: "taskukanri.firebasestorage.app",
+    messagingSenderId: "887325974556",
+    appId: "1:887325974556:web:31eb05c9140d0ccfa23fd9"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function setSyncStatus(text, color){
+    const el = document.getElementById('syncStatus');
+    if (el){ el.textContent = '● ' + text; el.style.color = color || 'var(--text-muted)'; }
+  }
+
+  const DEFAULT_MEMBERS = [
+    { name: "中村代理", offDays: [5,6] },
+    { name: "波多野さん", offDays: [5,6] },
+    { name: "國分さん", offDays: [5,6] },
+    { name: "はなさん", offDays: [5,6] }
+  ];
+  const CATEGORIES = ["定型", "KPI", "KDI", "随時", "その他"];
+  const CAT_COLOR = { "定型": "var(--routine)", "KPI": "var(--kpi)", "KDI": "var(--kdi)", "随時": "var(--adhoc)", "その他": "var(--other)" };
+  const CATEGORY_KEY = { "定型": "teikei", "KPI": "kpi", "KDI": "kdi", "随時": "zuiji", "その他": "other" };
+  const WEEKDAY_LABELS = ["月","火","水","木","金","土","日"];
+
+  let members = [];
+  let presetTasks = { "定型": [], "KPI": [], "KDI": [], "随時": [], "その他": [] };
+  let selectedPresetCategory = "KPI";
+  let current = new Date();
+  let curYear = current.getFullYear();
+  let curMonth = current.getMonth();
+  let weeksCache = {};
+  let editing = null;
+
+  let membersReady = false, presetsReady = false, weeksReady = false;
+  let currentWeekKeys = [];
+  let unsubWeeks = null;
+
+  // ---- helpers ----
+  function isoDate(d){
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  function parseIso(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y, m-1, d); }
+  function fmtShort(d){ return (d.getMonth()+1)+'/'+d.getDate(); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function getMonthWeekStarts(year, month){
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month+1, 0);
+    let d = new Date(firstDay);
+    const dow = d.getDay();
+    const diffToMonday = (dow===0 ? -6 : 1-dow);
+    d.setDate(d.getDate()+diffToMonday);
+    const starts=[];
+    while(d <= lastDay){ starts.push(new Date(d)); d.setDate(d.getDate()+7); }
+    return starts;
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('saveToast');
+    t.textContent = msg || '保存しました';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1600);
+  }
+
+  function findMember(name){ return members.find(m=>m.name===name); }
+  function sumPlanned(items){ return items.reduce((s,i)=> s + (Number(i.planned)||0), 0); }
+  function sumActual(items){ return items.reduce((s,i)=> s + (i.actual===null||i.actual===''||i.actual===undefined ? 0 : Number(i.actual)), 0); }
+  function anyActual(items){ return items.some(i=> i.actual!==null && i.actual!=='' && i.actual!==undefined); }
+
+  // ==========================================================
+  // デザイン設定（テーマプリセット・アクセントカラー）
+  // ==========================================================
+  const THEME_PRESETS = {
+    basic: { name: "ベーシック", vars: {
+      "--bg":"#F3F5F7","--surface":"#FFFFFF","--surface-alt":"#FAFBFC","--text":"#1C2430","--text-muted":"#6B7280","--border":"#E3E6EA",
+      "--routine":"#2F6D6E","--routine-soft":"#E3EEEE","--kpi":"#A9720F","--kpi-soft":"#F6EBD8","--kdi":"#2E6FB0","--kdi-soft":"#DCE9F5","--adhoc":"#675795","--adhoc-soft":"#ECE9F5",
+      "--other":"#7C828B","--other-soft":"#EEEFF1","--warn":"#AD3B2E","--warn-soft":"#F8E7E4","--ok":"#2E7D46","--ok-soft":"#E5F2E8",
+      "--off":"#C9CDD3","--off-soft":"#F1F2F4"
+    }},
+    warm: { name: "ウォーム", vars: {
+      "--bg":"#FAF6F1","--surface":"#FFFFFF","--surface-alt":"#F7EFE7","--text":"#3A2E27","--text-muted":"#8A7A6D","--border":"#E8DDD1",
+      "--routine":"#B5622F","--routine-soft":"#F3E3D6","--kpi":"#9C7A1E","--kpi-soft":"#F2E8CC","--kdi":"#3E6A93","--kdi-soft":"#DCE6EE","--adhoc":"#7C5B47","--adhoc-soft":"#EDE0D6",
+      "--other":"#9C8C7E","--other-soft":"#F1EAE2","--warn":"#B0402E","--warn-soft":"#F5DFD9","--ok":"#5C7A3D","--ok-soft":"#E5EDDB",
+      "--off":"#D8CBBE","--off-soft":"#F3ECE4"
+    }},
+    cool: { name: "クール", vars: {
+      "--bg":"#F1F4F8","--surface":"#FFFFFF","--surface-alt":"#EAF0F7","--text":"#1B2430","--text-muted":"#647085","--border":"#DCE3EC",
+      "--routine":"#2D5F8A","--routine-soft":"#DCEAF5","--kpi":"#8A6A1E","--kpi-soft":"#F0E7CC","--kdi":"#2C5F8F","--kdi-soft":"#DAE7F3","--adhoc":"#5C5B94","--adhoc-soft":"#E4E3F3",
+      "--other":"#7A8496","--other-soft":"#E9ECF1","--warn":"#B03B3B","--warn-soft":"#F5DEDE","--ok":"#2E7D62","--ok-soft":"#DFF0E9",
+      "--off":"#C6CEDA","--off-soft":"#EEF1F5"
+    }},
+    dark: { name: "ダーク", vars: {
+      "--bg":"#171A1F","--surface":"#1F242B","--surface-alt":"#262B32","--text":"#E7EAEE","--text-muted":"#AEB7C4","--border":"#363C46",
+      "--routine":"#4FA6A0","--routine-soft":"#223634","--kpi":"#D8A544","--kpi-soft":"#3A2F17","--kdi":"#5B9BD5","--kdi-soft":"#1E2E3D","--adhoc":"#A69DE0","--adhoc-soft":"#2C2A44",
+      "--other":"#AEB7C4","--other-soft":"#2A2E35","--warn":"#E1685A","--warn-soft":"#3B2521","--ok":"#5FCB8B","--ok-soft":"#1F332A",
+      "--off":"#525A65","--off-soft":"#20242A"
+    }}
+  };
+  let currentTheme = { presetId: 'basic', customAccent: null, fontScale: 100 };
+  const FONT_SCALES = [
+    { value: 100, label: "標準" },
+    { value: 115, label: "大" },
+    { value: 130, label: "特大" },
+    { value: 150, label: "超特大" }
+  ];
+
+  function cssVar(name, fallback){
+    const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return val || fallback;
+  }
+
+  function applyTheme(theme){
+    const preset = THEME_PRESETS[theme.presetId] || THEME_PRESETS.basic;
+    const root = document.documentElement.style;
+    Object.entries(preset.vars).forEach(([k,v]) => root.setProperty(k, v));
+    if (theme.customAccent){
+      root.setProperty('--routine', theme.customAccent);
+      root.setProperty('--routine-soft', hexToSoft(theme.customAccent));
+    }
+    document.body.style.zoom = (theme.fontScale || 100) + '%';
+  }
+  function hexToSoft(hex){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+    const mix = (c) => Math.round(c + (255-c)*0.85);
+    return 'rgb(' + mix(r) + ',' + mix(g) + ',' + mix(b) + ')';
+  }
+
+  function subscribeTheme(){
+    // 個人設定のため、このブラウザだけに保存する（localStorage）
+    try {
+      const raw = localStorage.getItem('ykCalendarTheme');
+      if (raw){
+        const data = JSON.parse(raw);
+        currentTheme = { presetId: data.presetId || 'basic', customAccent: data.customAccent || null, fontScale: data.fontScale || 100 };
+      }
+    } catch(e){ console.error('theme load failed', e); }
+    applyTheme(currentTheme);
+    renderThemePresetList();
+    renderFontScaleList();
+  }
+  function saveTheme(){
+    try { localStorage.setItem('ykCalendarTheme', JSON.stringify(currentTheme)); }
+    catch(e){ console.error('theme save failed', e); showToast('デザイン設定の保存に失敗しました（この端末には保存されません）'); }
+  }
+  function refreshChartsForTheme(){
+    // 現在表示中の画面のグラフを、新しい配色で再描画する
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof renderPersonalPage === 'function') renderPersonalPage();
+  }
+
+  function renderThemePresetList(){
+    const el = document.getElementById('themePresetList');
+    if (!el) return;
+    el.innerHTML = Object.entries(THEME_PRESETS).map(([id, preset])=>{
+      const v = preset.vars;
+      return '<button class="theme-swatch'+(currentTheme.presetId===id?' active':'')+'" data-preset="'+id+'">'
+        + '<div class="swatch-name">'+preset.name+'</div>'
+        + '<div class="swatch-colors">'
+        + '<span class="swatch-dot" style="background:'+v['--bg']+'"></span>'
+        + '<span class="swatch-dot" style="background:'+v['--routine']+'"></span>'
+        + '<span class="swatch-dot" style="background:'+v['--kpi']+'"></span>'
+        + '<span class="swatch-dot" style="background:'+v['--adhoc']+'"></span>'
+        + '</div></button>';
+    }).join('');
+    el.querySelectorAll('.theme-swatch').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        currentTheme.presetId = btn.dataset.preset;
+        currentTheme.customAccent = null;
+        applyTheme(currentTheme);
+        renderThemePresetList();
+        updateAccentPickerValue();
+        saveTheme();
+        refreshChartsForTheme();
+      });
+    });
+  }
+  function renderFontScaleList(){
+    const el = document.getElementById('fontScaleList');
+    if (!el) return;
+    el.innerHTML = FONT_SCALES.map(f=>
+      '<button class="mini-tab'+(currentTheme.fontScale===f.value?' active':'')+'" data-scale="'+f.value+'">'+f.label+'</button>'
+    ).join('');
+    el.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        currentTheme.fontScale = Number(btn.dataset.scale);
+        applyTheme(currentTheme);
+        renderFontScaleList();
+        saveTheme();
+      });
+    });
+  }
+  function updateAccentPickerValue(){
+    const picker = document.getElementById('themeAccentPicker');
+    if (!picker) return;
+    picker.value = currentTheme.customAccent || THEME_PRESETS[currentTheme.presetId].vars['--routine'];
+  }
+
+  document.getElementById('openThemeBtn').addEventListener('click', ()=>{
+    renderThemePresetList();
+    updateAccentPickerValue();
+    renderFontScaleList();
+    document.getElementById('themeOverlay').classList.remove('hidden');
+  });
+  document.getElementById('closeTheme').addEventListener('click', ()=>{
+    document.getElementById('themeOverlay').classList.add('hidden');
+  });
+  document.getElementById('themeAccentPicker').addEventListener('input', (e)=>{
+    currentTheme.customAccent = e.target.value;
+    applyTheme(currentTheme);
+    saveTheme();
+    refreshChartsForTheme();
+  });
+  document.getElementById('themeAccentReset').addEventListener('click', ()=>{
+    currentTheme.customAccent = null;
+    applyTheme(currentTheme);
+    updateAccentPickerValue();
+    saveTheme();
+    refreshChartsForTheme();
+  });
+
+  function renderLegend(){
+    const el = document.getElementById('legend');
+    el.innerHTML = CATEGORIES.map(c=>
+      '<span><span class="dot" style="background:'+CAT_COLOR[c]+'"></span>'+c+'</span>'
+    ).join('')
+    + '<span>🔒 個人的な予定（目印のみ・内容は全員に見えます）</span>'
+    + '<span>🤝 共同実行タスクを含む</span>'
+    + '<span><span class="dot" style="background:var(--off)"></span>休み（自動表示）</span>';
+  }
+  function renderMonthLabel(){ document.getElementById('monthLabel').textContent = curYear + '年 ' + (curMonth+1) + '月'; }
+
+  // ==========================================================
+  // Firestore: members / presetTasks（常時リアルタイム購読）
+  // ==========================================================
+  function subscribeMembers(){
+    db.collection('appData').doc('members').onSnapshot(async (doc)=>{
+      if (!doc.exists){
+        try { await db.collection('appData').doc('members').set({ list: DEFAULT_MEMBERS }); }
+        catch(e){ console.error('members seed failed', e); }
+        return; // 次のsnapshotで反映される
+      }
+      const data = doc.data();
+      members = (data && Array.isArray(data.list)) ? data.list : DEFAULT_MEMBERS.map(m=>({...m}));
+      membersReady = true;
+      renderCalendar();
+      if (!document.getElementById('memberOverlay').classList.contains('hidden')) renderMemberList();
+    }, err => { console.error('members onSnapshot error', err); setSyncStatus('メンバー情報の取得エラー', 'var(--warn)'); });
+  }
+  async function saveMembers(){
+    try { await db.collection('appData').doc('members').set({ list: members }); }
+    catch(e){ console.error('members save failed', e); showToast('メンバー情報の保存に失敗しました'); }
+  }
+
+  function subscribePresets(){
+    db.collection('appData').doc('presetTasks').onSnapshot(async (doc)=>{
+      if (!doc.exists){
+        // 旧「standbyTasks」データがあれば「随時」カテゴリへ引き継ぐ（移行措置）
+        let seed = { "定型": [], "KPI": [], "KDI": [], "随時": [], "その他": [] };
+        try {
+          const oldDoc = await db.collection('appData').doc('standbyTasks').get();
+          if (oldDoc.exists && Array.isArray(oldDoc.data().list)) seed["随時"] = oldDoc.data().list;
+        } catch(e){ /* 旧データが無ければ無視 */ }
+        try { await db.collection('appData').doc('presetTasks').set({ byCategory: seed }); }
+        catch(e){ console.error('presetTasks seed failed', e); }
+        return; // 次のsnapshotで反映される
+      }
+      const data = doc.data();
+      const byCat = (data && data.byCategory) ? data.byCategory : {};
+      CATEGORIES.forEach(c => { presetTasks[c] = Array.isArray(byCat[c]) ? byCat[c] : []; });
+      presetsReady = true;
+      renderPresetDatalists();
+      if (!document.getElementById('standbyOverlay').classList.contains('hidden')) renderStandbyModal();
+    }, err => { console.error('presetTasks onSnapshot error', err); setSyncStatus('タスク登録リストの取得エラー', 'var(--warn)'); });
+  }
+  async function savePresets(){
+    try { await db.collection('appData').doc('presetTasks').set({ byCategory: presetTasks }); }
+    catch(e){ console.error('presetTasks save failed', e); showToast('タスク登録リストの保存に失敗しました'); }
+  }
+  function renderPresetDatalists(){
+    CATEGORIES.forEach(c=>{
+      const el = document.getElementById('presetList_' + CATEGORY_KEY[c]);
+      if (el) el.innerHTML = (presetTasks[c]||[]).map(t=>'<option value="'+escapeHtml(t.name)+'">').join('');
+    });
+  }
+
+  // ==========================================================
+  // Firestore: 週データ（表示中の月に該当する週だけをリアルタイム購読）
+  // ==========================================================
+  function ensureWeekSubscription(weekStartIsoList){
+    const key = weekStartIsoList.join(',');
+    if (key === currentWeekKeys.join(',')) return;
+    currentWeekKeys = weekStartIsoList;
+    if (unsubWeeks) { unsubWeeks(); unsubWeeks = null; }
+    weekStartIsoList.forEach(iso => { if (!weeksCache[iso]) weeksCache[iso] = { days: {} }; });
+    if (weekStartIsoList.length === 0){ weeksReady = true; renderCalendar(); return; }
+
+    setSyncStatus('接続中…');
+    unsubWeeks = db.collection('weeks')
+      .where(firebase.firestore.FieldPath.documentId(), 'in', weekStartIsoList)
+      .onSnapshot(snapshot => {
+        weekStartIsoList.forEach(iso => { weeksCache[iso] = { days: {} }; });
+        snapshot.forEach(doc => { weeksCache[doc.id] = doc.data() || { days: {} }; });
+        weeksReady = true;
+        setSyncStatus('リアルタイム同期中', 'var(--ok)');
+        renderCalendar();
+      }, err => {
+        console.error('weeks onSnapshot error', err);
+        setSyncStatus('同期エラー（通信をご確認ください）', 'var(--warn)');
+      });
+  }
+  async function saveWeek(weekStartIso){
+    try {
+      await db.collection('weeks').doc(weekStartIso).set(weeksCache[weekStartIso]);
+      return true;
+    } catch(e){ console.error('week save failed', e); return false; }
+  }
+  function getDayData(weekStartIso, dateIso, member){
+    const wk = weeksCache[weekStartIso];
+    if (!wk.days[dateIso]) wk.days[dateIso] = {};
+    if (!wk.days[dateIso][member]) wk.days[dateIso][member] = { items: [] };
+    return wk.days[dateIso][member];
+  }
+
+  // ==========================================================
+  // カレンダー描画（メンバー/随時/週データが更新される度に呼ばれる）
+  // ==========================================================
+  let categoryChartInstance = null;
+  let weeklyChartInstance = null;
+  let memberChartInstance = null;
+  let taskFilterMember = '';
+  let taskFilterCategory = '';
+  let memberChartMode = 'month';
+  let lastPerMemberStatsMonth = null;
+  let yearlyMemberStatsCache = { year: null, data: null };
+  let yearlyFetchInFlight = false;
+  let personalMember = null;
+  let personalCategoryChartInstance = null;
+  let personalWeeklyChartInstance = null;
+
+  function getWeeklyGoalData(weekStartIso, member){
+    const wk = weeksCache[weekStartIso];
+    wk.weeklyGoals = wk.weeklyGoals || {};
+    if (!wk.weeklyGoals[member]) wk.weeklyGoals[member] = { goals: [], reviewStatus: '', reviewNote: '' };
+    const gd = wk.weeklyGoals[member];
+    if (!Array.isArray(gd.goals)) gd.goals = [];
+    // 旧形式（goal:文字列 1つ）からの移行
+    if (gd.goal && gd.goals.length === 0){
+      gd.goals.push({ id: 'g'+Date.now()+Math.random().toString(36).slice(2,6), text: gd.goal, done: false });
+      delete gd.goal;
+    }
+    return gd;
+  }
+
+  function renderPersonalLegend(){
+    const el = document.getElementById('personalLegend');
+    if (!el) return;
+    el.innerHTML = CATEGORIES.map(c=>
+      '<span><span class="dot" style="background:'+CAT_COLOR[c]+'"></span>'+c+'</span>'
+    ).join('')
+    + '<span>🔒 個人的な予定</span>'
+    + '<span>🤝 共同実行タスクを含む</span>'
+    + '<span><span class="dot" style="background:var(--off)"></span>休み（自動表示）</span>';
+  }
+
+  function renderPersonalPage(){
+    const container = document.getElementById('personalWeeksContainer');
+    if (!container) return; // まだこのページのHTMLが無い場合は何もしない
+    renderPersonalLegend();
+    if (!membersReady || !weeksReady){
+      container.innerHTML = '<div class="loading-note">読み込み中…</div>';
+      return;
+    }
+    if (members.length === 0){
+      container.innerHTML = '<div class="loading-note">メンバーが登録されていません</div>';
+      return;
+    }
+    if (!personalMember || !members.some(m=>m.name===personalMember)) personalMember = members[0].name;
+
+    const selectEl = document.getElementById('personalMemberSelect');
+    selectEl.innerHTML = members.map(m=>
+      '<option value="'+escapeHtml(m.name)+'"'+(m.name===personalMember?' selected':'')+'>'+escapeHtml(m.name)+'</option>'
+    ).join('');
+
+    document.getElementById('personalMonthLabel').textContent = curYear + '年 ' + (curMonth+1) + '月';
+
+    const member = findMember(personalMember);
+    const weekStartsDates = getMonthWeekStarts(curYear, curMonth);
+    let monthPlanned = 0, monthActual = 0, monthHasActual = false, kpiAheadCount = 0;
+    const categoryStats = {}; CATEGORIES.forEach(c=>{ categoryStats[c] = { planned: 0, actual: 0 }; });
+    const weeklyStats = [];
+
+    const cardsHtml = weekStartsDates.map(ws=>{
+      const weekStartIso = isoDate(ws);
+      const wk = weeksCache[weekStartIso] || { days: {} };
+      const goalData = getWeeklyGoalData(weekStartIso, personalMember);
+      const days = [];
+      for (let i=0;i<7;i++){ const d = new Date(ws); d.setDate(d.getDate()+i); days.push(d); }
+      let weekPlanned = 0, weekActual = 0, weekAnyActual = false;
+
+      const cells = days.map((d, dayIdx)=>{
+        const dateIso = isoDate(d);
+        const dayData = (wk.days[dateIso] && wk.days[dateIso][personalMember]) ? wk.days[dateIso][personalMember] : { items: [] };
+        const items = dayData.items || [];
+        items.forEach(it=>{
+          const cat = categoryStats[it.category] ? it.category : 'その他';
+          const p = Number(it.planned) || 0;
+          categoryStats[cat].planned += p;
+          if (it.actual !== null && it.actual !== '' && it.actual !== undefined){
+            const a = Number(it.actual);
+            categoryStats[cat].actual += a;
+            if (it.category === 'KPI' && it.planned !== null && it.planned !== '' && a < Number(it.planned)) kpiAheadCount += 1;
+          }
+        });
+        const planned = sumPlanned(items);
+        const actual = sumActual(items);
+        const hasActual = anyActual(items);
+        weekPlanned += planned; weekActual += hasActual ? actual : 0;
+        if (hasActual) weekAnyActual = true;
+        monthPlanned += planned; monthActual += hasActual ? actual : 0;
+        if (hasActual) monthHasActual = true;
+
+        const inMonth = d.getMonth() === curMonth;
+        const isOffDay = member && (member.offDays||[]).includes(dayIdx);
+        let bodyHtml;
+        if (items.length === 0 && isOffDay){ bodyHtml = '<div class="cell-off">休み</div>'; }
+        else if (items.length === 0){ bodyHtml = '<div class="cell-empty">+</div>'; }
+        else {
+          const cats = [...new Set(items.map(i=>i.category))];
+          const dots = cats.map(c=>'<span class="dot" style="background:'+(CAT_COLOR[c]||'var(--other)')+'"></span>').join('')
+            + (items.some(i=>i.private) ? '<span class="lock-mark">🔒</span>' : '')
+            + (items.some(i=>i.groupId) ? '<span class="lock-mark">🤝</span>' : '');
+          let gapClass = '';
+          if (hasActual){ const gap = planned - actual; if (gap > 2) gapClass = 'gap-warn'; else if (Math.abs(gap) <= 0.5) gapClass = 'gap-ok'; }
+          const hoursText = '<div class="cell-hours">計 '+planned+'h' + (hasActual ? (' / <span class="'+gapClass+'">実 '+actual+'h</span>') : '') + '</div>';
+          bodyHtml = '<div class="cell-dots">'+dots+'</div>'+hoursText;
+        }
+        return '<td class="day-cell'+(inMonth?'':' muted')+(isOffDay && items.length===0 ? ' offday' : '')+'" data-week="'+weekStartIso+'" data-date="'+dateIso+'" data-member="'+encodeURIComponent(personalMember)+'">'
+          + '<div class="day-num">'+fmtShort(d)+'</div>' + bodyHtml + '</td>';
+      }).join('');
+
+      weeklyStats.push({ label: fmtShort(days[0])+'〜'+fmtShort(days[6]), planned: weekPlanned, actual: weekActual, hasActual: weekAnyActual });
+
+      let gapClass = 'neutral';
+      if (weekAnyActual){ const gap = weekPlanned - weekActual; gapClass = Math.abs(gap) <= 1 ? 'ok' : (gap > 1 ? 'warn' : ''); }
+      const actualPct = weekPlanned>0 ? Math.min(100, Math.round((weekActual/weekPlanned)*100)) : 0;
+      const rangeLabel = fmtShort(days[0])+'('+WEEKDAY_LABELS[0]+') 〜 '+fmtShort(days[6])+'('+WEEKDAY_LABELS[6]+')';
+      const headCells = WEEKDAY_LABELS.map(l=>'<th>'+l+'</th>').join('');
+      const reviewOptions = ['', '達成', '一部達成', '未達成'].map(s=>
+        '<option value="'+s+'"'+(goalData.reviewStatus===s?' selected':'')+'>'+(s||'未評価')+'</option>').join('');
+      const goalsArr = goalData.goals || [];
+      const goalRowsHtml = goalsArr.map((g, gi)=>
+        '<div class="weekly-goal-row" data-week="'+weekStartIso+'" data-gidx="'+gi+'">'
+        + '<input type="checkbox" class="goal-done"'+(g.done?' checked':'')+'>'
+        + '<input type="text" class="goal-text" value="'+escapeHtml(g.text||'')+'" placeholder="目標を入力">'
+        + '<button class="del-btn goal-del" title="削除">×</button>'
+        + '</div>'
+      ).join('');
+      const goalFooterHtml = goalsArr.length < 5
+        ? '<button class="add-btn goal-add-btn" data-week="'+weekStartIso+'" style="margin-top:4px; padding:6px 10px;">＋ 目標を追加（'+goalsArr.length+'/5）</button>'
+        : '<p style="font-size:11px; color:var(--text-muted); margin:4px 0 0;">目標は最大5つまでです（5/5）</p>';
+
+      return '<div class="week-card">'
+        + '<div class="week-head">'
+        + '<div class="range">'+rangeLabel+'</div>'
+        + '<div class="gapbar-wrap">'
+        + '<span>計画 '+weekPlanned.toFixed(1)+'h</span>'
+        + '<div class="gapbar '+gapClass+'"><div class="planned-fill"></div><div class="actual-fill" style="width:'+actualPct+'%"></div></div>'
+        + '<span>'+(weekAnyActual ? ('実績 '+weekActual.toFixed(1)+'h') : '実績未入力')+'</span>'
+        + '</div></div>'
+        + '<div style="padding:12px 16px; border-bottom:1px solid var(--border);">'
+        + '<div style="margin-bottom:10px;"><label style="font-size:11px; color:var(--text-muted); font-weight:600;">🎯 この週の目標（最大5つ・チェックで達成扱い）</label>'
+        + goalRowsHtml + goalFooterHtml + '</div>'
+        + '<div class="field-row">'
+        + '<div class="field"><label>振り返り：達成度</label><select class="weekly-review-status" data-week="'+weekStartIso+'">'+reviewOptions+'</select></div>'
+        + '<div class="field grow"><label>振り返りメモ</label><input type="text" class="weekly-review-note" data-week="'+weekStartIso+'" value="'+escapeHtml(goalData.reviewNote||'')+'" placeholder="計画通りに進んだか、ずれた理由など"></div>'
+        + '</div></div>'
+        + '<div class="week-wrap"><table class="week-grid"><thead><tr><th class="member-col">'+escapeHtml(personalMember)+'</th>'+headCells+'</tr></thead>'
+        + '<tbody><tr><td class="member-col">'+escapeHtml(personalMember)+'</td>'+cells+'</tr></tbody></table></div>'
+        + '</div>';
+    }).join('');
+
+    container.innerHTML = cardsHtml;
+
+    const efficiencyPct = (monthHasActual && monthPlanned>0) ? Math.round((monthActual/monthPlanned)*100) : null;
+    let effBadgeClass = 'neutral', effLabel = '実績未入力';
+    if (efficiencyPct !== null){
+      effLabel = '工数消化率 ' + efficiencyPct + '%';
+      effBadgeClass = efficiencyPct <= 90 ? 'good' : (efficiencyPct > 110 ? 'warn' : 'neutral');
+    }
+    const kpiStat = categoryStats['KPI'] || { planned:0, actual:0 };
+    const kpiEffPct = kpiStat.planned>0 ? Math.round((kpiStat.actual/kpiStat.planned)*100) : null;
+
+    document.getElementById('personalMonthSummary').innerHTML =
+      '<div class="stat"><div class="num">'+monthPlanned.toFixed(1)+'h</div><div class="lbl">今月の計画合計</div></div>'
+      + '<div class="stat"><div class="num">'+(monthHasActual? monthActual.toFixed(1) : '-')+'h</div><div class="lbl">今月の実績合計</div></div>'
+      + '<div class="stat"><div class="num">'+(monthHasActual? (monthPlanned-monthActual).toFixed(1) : '-')+'h</div><div class="lbl">ギャップ（計画−実績）</div></div>'
+      + '<div class="stat"><span class="eff-badge '+effBadgeClass+'">'+effLabel+'</span><div class="lbl" style="margin-top:6px;">100%未満＝計画より短時間で消化</div></div>'
+      + '<div class="stat"><span class="kpi-badge">⚡ KPI前倒し達成 '+kpiAheadCount+'件</span>'
+      + (kpiEffPct!==null ? ('<div class="lbl" style="margin-top:6px;">KPI消化率 '+kpiEffPct+'%</div>') : '<div class="lbl" style="margin-top:6px;">KPIの実績未入力</div>')
+      + '</div>';
+
+    drawPersonalCharts(categoryStats, weeklyStats);
+
+    document.querySelectorAll('#personalWeeksContainer td.day-cell').forEach(td=>{
+      td.addEventListener('click', ()=> openDayModal(td.dataset.week, td.dataset.date, decodeURIComponent(td.dataset.member)));
+    });
+
+    selectEl.onchange = ()=>{ personalMember = selectEl.value; renderPersonalPage(); };
+
+    document.querySelectorAll('.weekly-goal-row').forEach(row=>{
+      const weekStartIso = row.dataset.week;
+      const gidx = Number(row.dataset.gidx);
+      row.querySelector('.goal-done').addEventListener('change', async (e)=>{
+        const gd = getWeeklyGoalData(weekStartIso, personalMember);
+        gd.goals[gidx].done = e.target.checked;
+        const ok = await saveWeek(weekStartIso);
+        showToast(ok ? '保存しました' : '保存に失敗しました');
+        renderCalendar();
+      });
+      row.querySelector('.goal-text').addEventListener('change', async (e)=>{
+        const gd = getWeeklyGoalData(weekStartIso, personalMember);
+        gd.goals[gidx].text = e.target.value;
+        const ok = await saveWeek(weekStartIso);
+        showToast(ok ? '保存しました' : '保存に失敗しました');
+        renderCalendar();
+      });
+      row.querySelector('.goal-del').addEventListener('click', async ()=>{
+        const gd = getWeeklyGoalData(weekStartIso, personalMember);
+        gd.goals.splice(gidx, 1);
+        await saveWeek(weekStartIso);
+        renderPersonalPage();
+        renderCalendar();
+      });
+    });
+    document.querySelectorAll('.goal-add-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const gd = getWeeklyGoalData(btn.dataset.week, personalMember);
+        if (gd.goals.length >= 5) return;
+        gd.goals.push({ id: 'g'+Date.now()+Math.random().toString(36).slice(2,6), text: '', done: false });
+        await saveWeek(btn.dataset.week);
+        renderPersonalPage();
+      });
+    });
+    document.querySelectorAll('.weekly-review-status').forEach(sel=>{
+      sel.addEventListener('change', async ()=>{
+        const gd = getWeeklyGoalData(sel.dataset.week, personalMember);
+        gd.reviewStatus = sel.value;
+        const ok = await saveWeek(sel.dataset.week);
+        showToast(ok ? '振り返りを保存しました' : '保存に失敗しました');
+      });
+    });
+    document.querySelectorAll('.weekly-review-note').forEach(inp=>{
+      inp.addEventListener('change', async ()=>{
+        const gd = getWeeklyGoalData(inp.dataset.week, personalMember);
+        gd.reviewNote = inp.value;
+        const ok = await saveWeek(inp.dataset.week);
+        showToast(ok ? '振り返りを保存しました' : '保存に失敗しました');
+      });
+    });
+  }
+
+  function drawPersonalCharts(categoryStats, weeklyStats){
+    if (typeof Chart === 'undefined') return;
+    const catLabels = CATEGORIES;
+    const catPlanned = catLabels.map(c => (categoryStats[c] ? categoryStats[c].planned : 0));
+    const catActual = catLabels.map(c => (categoryStats[c] ? categoryStats[c].actual : 0));
+    const catCanvas = document.getElementById('personalCategoryChart');
+    if (catCanvas){
+      if (personalCategoryChartInstance) personalCategoryChartInstance.destroy();
+      personalCategoryChartInstance = new Chart(catCanvas.getContext('2d'), {
+        type: 'bar',
+        data: { labels: catLabels, datasets: [
+          { label: '計画(h)', data: catPlanned, backgroundColor: cssVar('--off','#C9CDD3') },
+          { label: '実績(h)', data: catActual, backgroundColor: cssVar('--routine','#2F6D6E') }
+        ]},
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11}, color: cssVar('--text-muted','#6B7280') } } },
+          scales:{ x:{ beginAtZero:true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } } }
+      });
+    }
+    const wLabels = weeklyStats.map(w=>w.label);
+    const wPlanned = weeklyStats.map(w=>w.planned);
+    const wActual = weeklyStats.map(w=> w.hasActual ? w.actual : null);
+    const weekCanvas = document.getElementById('personalWeeklyChart');
+    if (weekCanvas){
+      if (personalWeeklyChartInstance) personalWeeklyChartInstance.destroy();
+      personalWeeklyChartInstance = new Chart(weekCanvas.getContext('2d'), {
+        type: 'bar',
+        data: { labels: wLabels, datasets: [
+          { label: '計画(h)', data: wPlanned, backgroundColor: cssVar('--off','#C9CDD3') },
+          { label: '実績(h)', data: wActual, backgroundColor: cssVar('--kpi','#A9720F') }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11}, color: cssVar('--text-muted','#6B7280') } } },
+          scales:{ y:{ beginAtZero:true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } } }
+      });
+    }
+  }
+
+  function renderAnalytics(perMemberStats, taskList){
+    lastPerMemberStatsMonth = perMemberStats;
+    drawMemberChart();
+
+    const memberSel = document.getElementById('taskFilterMember');
+    const catSel = document.getElementById('taskFilterCategory');
+    if (memberSel && catSel){
+      const memberNames = Object.keys(perMemberStats);
+      memberSel.innerHTML = '<option value="">すべて</option>' + memberNames.map(m=>
+        '<option value="'+escapeHtml(m)+'"'+(taskFilterMember===m?' selected':'')+'>'+escapeHtml(m)+'</option>').join('');
+      catSel.innerHTML = '<option value="">すべて</option>' + CATEGORIES.map(c=>
+        '<option value="'+c+'"'+(taskFilterCategory===c?' selected':'')+'>'+c+'</option>').join('');
+      memberSel.onchange = ()=>{ taskFilterMember = memberSel.value; renderTaskTable(taskList); };
+      catSel.onchange = ()=>{ taskFilterCategory = catSel.value; renderTaskTable(taskList); };
+    }
+    renderTaskTable(taskList);
+  }
+
+  function drawMemberChartWithData(perMemberStats, periodLabel){
+    const labelEl = document.getElementById('memberChartPeriodLabel');
+    if (labelEl) labelEl.textContent = periodLabel;
+    if (typeof Chart === 'undefined') return;
+    const labels = Object.keys(perMemberStats);
+    const plannedArr = labels.map(m => perMemberStats[m].planned);
+    const actualArr = labels.map(m => perMemberStats[m].actual);
+    const canvas = document.getElementById('memberChart');
+    if (!canvas) return;
+    if (memberChartInstance) memberChartInstance.destroy();
+    memberChartInstance = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label: '計画(h)', data: plannedArr, backgroundColor: cssVar('--off','#C9CDD3') },
+        { label: '実績(h)', data: actualArr, backgroundColor: cssVar('--adhoc','#675795') }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, color: cssVar('--text-muted','#6B7280') } } },
+        scales: { y: { beginAtZero: true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } }
+      }
+    });
+  }
+
+  function drawMemberChart(){
+    if (memberChartMode === 'month'){
+      if (lastPerMemberStatsMonth){
+        drawMemberChartWithData(lastPerMemberStatsMonth, (curYear)+'年 '+(curMonth+1)+'月');
+      }
+      return;
+    }
+    // 年間合計モード
+    if (yearlyMemberStatsCache.year === curYear && yearlyMemberStatsCache.data){
+      drawMemberChartWithData(yearlyMemberStatsCache.data, curYear+'年 年間合計');
+      return;
+    }
+    const labelEl = document.getElementById('memberChartPeriodLabel');
+    if (labelEl) labelEl.textContent = curYear+'年の年間データを集計中…';
+    if (yearlyFetchInFlight) return;
+    yearlyFetchInFlight = true;
+    computeYearlyMemberStats(curYear).then(data=>{
+      yearlyFetchInFlight = false;
+      yearlyMemberStatsCache = { year: curYear, data };
+      if (memberChartMode === 'year') drawMemberChartWithData(data, curYear+'年 年間合計');
+    }).catch(e=>{
+      yearlyFetchInFlight = false;
+      console.error('yearly aggregate failed', e);
+      if (labelEl) labelEl.textContent = '年間データの取得に失敗しました（通信環境をご確認ください）';
+    });
+  }
+
+  async function computeYearlyMemberStats(year){
+    // 週開始日が (year-1)/12/25 〜 year/12/31 のドキュメントを対象にする
+    // （年をまたぐ週の欠落を防ぐための余裕を持たせている）
+    const startKey = (year-1) + '-12-25';
+    const endKey = year + '-12-31';
+    const snapshot = await db.collection('weeks')
+      .where(firebase.firestore.FieldPath.documentId(), '>=', startKey)
+      .where(firebase.firestore.FieldPath.documentId(), '<=', endKey)
+      .get();
+
+    const stats = {};
+    members.forEach(m => { stats[m.name] = { planned: 0, actual: 0 }; });
+
+    snapshot.forEach(doc=>{
+      const wk = doc.data() || { days: {} };
+      Object.keys(wk.days || {}).forEach(dateIso=>{
+        const d = parseIso(dateIso);
+        if (d.getFullYear() !== year) return; // 年をまたぐ週からはみ出た日は除外
+        const dayObj = wk.days[dateIso];
+        Object.keys(dayObj || {}).forEach(memberName=>{
+          if (!stats[memberName]) stats[memberName] = { planned: 0, actual: 0 };
+          const items = (dayObj[memberName] && dayObj[memberName].items) || [];
+          items.forEach(it=>{
+            stats[memberName].planned += (Number(it.planned) || 0);
+            if (it.actual !== null && it.actual !== '' && it.actual !== undefined){
+              stats[memberName].actual += Number(it.actual);
+            }
+          });
+        });
+      });
+    });
+    return stats;
+  }
+
+  function renderTaskTable(taskList){
+    const filtered = taskList.filter(t=>
+      (!taskFilterMember || t.member === taskFilterMember) &&
+      (!taskFilterCategory || t.category === taskFilterCategory)
+    ).sort((a,b)=> a.date.localeCompare(b.date));
+
+    renderTaskGroupedTable(filtered);
+
+    const table = document.getElementById('taskDetailTable');
+    if (!table) return;
+    const rows = filtered.map(t=>{
+      const gap = (t.planned!=null && t.actual!=null) ? (t.planned - t.actual).toFixed(1) : '';
+      const text = t.private ? '🔒 非公開の予定' : escapeHtml(t.text);
+      const link = (!t.private && t.urls && t.urls.length)
+        ? t.urls.map((u,i)=>'<a href="'+escapeHtml(u)+'" target="_blank" rel="noopener" title="'+escapeHtml(u)+'">🔗'+(t.urls.length>1?(i+1):'')+'</a>').join(' ')
+        : '';
+      return '<tr><td>'+t.date+'</td><td>'+escapeHtml(t.member)+'</td><td>'+escapeHtml(t.category)+'</td><td>'+text+'</td>'
+        + '<td>'+(t.planned??'-')+'</td><td>'+(t.actual??'-')+'</td><td>'+gap+'</td><td>'+link+'</td></tr>';
+    }).join('');
+
+    table.innerHTML = '<thead><tr><th>日付</th><th>メンバー</th><th>カテゴリ</th><th>タスク内容</th><th>計画h</th><th>実績h</th><th>ギャップ</th><th>URL</th></tr></thead><tbody>'
+      + (rows || '<tr><td colspan="8" style="color:var(--text-muted); text-align:center; padding:20px;">該当するタスクがありません</td></tr>')
+      + '</tbody>';
+  }
+
+  function renderTaskGroupedTable(filtered){
+    const table = document.getElementById('taskGroupedTable');
+    if (!table) return;
+
+    const groups = {}; // key: カテゴリ+タスク名（非公開は個別扱い）
+    filtered.forEach(t=>{
+      if (t.private){
+        // 非公開のタスクは内容が分からないため、集計に混ぜず「非公開」枠にまとめる
+        const key = '__private__:' + t.category;
+        if (!groups[key]) groups[key] = { text: '🔒 非公開の予定', category: t.category, count: 0, planned: 0, actual: 0, hasActual: false, members: new Set() };
+        groups[key].count += 1;
+        groups[key].planned += (t.planned || 0);
+        if (t.actual != null){ groups[key].actual += t.actual; groups[key].hasActual = true; }
+        groups[key].members.add(t.member);
+        return;
+      }
+      const norm = (t.text || '').trim();
+      const key = t.category + '：' + norm;
+      if (!groups[key]) groups[key] = { text: norm || '(タスク名なし)', category: t.category, count: 0, planned: 0, actual: 0, hasActual: false, members: new Set() };
+      groups[key].count += 1;
+      groups[key].planned += (t.planned || 0);
+      if (t.actual != null){ groups[key].actual += t.actual; groups[key].hasActual = true; }
+      groups[key].members.add(t.member);
+    });
+
+    const groupList = Object.values(groups).sort((a,b)=> b.planned - a.planned);
+    const rows = groupList.map(g=>{
+      const gap = g.hasActual ? (g.planned - g.actual).toFixed(1) : '';
+      return '<tr><td>'+escapeHtml(g.category)+'</td><td>'+escapeHtml(g.text)+'</td><td>'+g.count+'件</td>'
+        + '<td>'+g.planned.toFixed(1)+'</td><td>'+(g.hasActual ? g.actual.toFixed(1) : '-')+'</td><td>'+gap+'</td>'
+        + '<td>'+escapeHtml([...g.members].join(' / '))+'</td></tr>';
+    }).join('');
+
+    table.innerHTML = '<thead><tr><th>カテゴリ</th><th>タスク名</th><th>件数</th><th>計画合計h</th><th>実績合計h</th><th>ギャップ合計</th><th>関与メンバー</th></tr></thead><tbody>'
+      + (rows || '<tr><td colspan="7" style="color:var(--text-muted); text-align:center; padding:20px;">該当するタスクがありません</td></tr>')
+      + '</tbody>';
+  }
+
+  function renderCalendar(){
+    const container = document.getElementById('weeksContainer');
+    if (!membersReady || !weeksReady){
+      container.innerHTML = '<div class="loading-note">読み込み中…</div>';
+      return;
+    }
+
+    const weekStartsDates = getMonthWeekStarts(curYear, curMonth);
+    let monthPlanned = 0, monthActual = 0, monthHasActual = false;
+    const categoryStats = {};
+    CATEGORIES.forEach(c => { categoryStats[c] = { planned: 0, actual: 0 }; });
+    const weeklyStats = [];
+    let kpiAheadCount = 0;
+    const perMemberStats = {};
+    members.forEach(m => { perMemberStats[m.name] = { planned: 0, actual: 0 }; });
+    const taskList = [];
+
+    const cardsHtml = weekStartsDates.map(ws => {
+      const weekStartIso = isoDate(ws);
+      const wk = weeksCache[weekStartIso] || { days: {} };
+      const days = [];
+      for (let i=0;i<7;i++){ const d = new Date(ws); d.setDate(d.getDate()+i); days.push(d); }
+      let weekPlanned = 0, weekActual = 0, weekAnyActual = false;
+
+      const bodyRows = members.map(member => {
+        const cells = days.map((d, dayIdx)=>{
+          const dateIso = isoDate(d);
+          const dayData = (wk.days[dateIso] && wk.days[dateIso][member.name]) ? wk.days[dateIso][member.name] : { items: [] };
+          const items = dayData.items || [];
+          items.forEach(it=>{
+            const cat = categoryStats[it.category] ? it.category : 'その他';
+            const p = Number(it.planned) || 0;
+            categoryStats[cat].planned += p;
+            perMemberStats[member.name].planned += p;
+            let aVal = null;
+            if (it.actual !== null && it.actual !== '' && it.actual !== undefined){
+              aVal = Number(it.actual);
+              categoryStats[cat].actual += aVal;
+              perMemberStats[member.name].actual += aVal;
+              if (it.category === 'KPI' && it.planned !== null && it.planned !== '' && aVal < Number(it.planned)){
+                kpiAheadCount += 1;
+              }
+            }
+            taskList.push({
+              date: dateIso, member: member.name, category: it.category,
+              text: it.text || '', planned: (it.planned===null||it.planned===undefined) ? null : Number(it.planned),
+              actual: aVal, private: !!it.private, urls: it.urls || (it.url ? [it.url] : [])
+            });
+          });
+          const planned = sumPlanned(items);
+          const actual = sumActual(items);
+          const hasActual = anyActual(items);
+          weekPlanned += planned; weekActual += hasActual ? actual : 0;
+          if (hasActual) weekAnyActual = true;
+          monthPlanned += planned; monthActual += hasActual ? actual : 0;
+          if (hasActual) monthHasActual = true;
+
+          const inMonth = d.getMonth() === curMonth;
+          const isOffDay = (member.offDays||[]).includes(dayIdx);
+
+          let bodyHtml;
+          if (items.length === 0 && isOffDay){
+            bodyHtml = '<div class="cell-off">休み</div>';
+          } else if (items.length === 0){
+            bodyHtml = '<div class="cell-empty">+</div>';
+          } else {
+            const cats = [...new Set(items.map(i=>i.category))];
+            const baseDots = cats.map(c=>'<span class="dot" style="background:'+(CAT_COLOR[c]||'var(--other)')+'"></span>').join('');
+            const dots = baseDots
+              + (items.some(i=>i.private) ? '<span class="lock-mark">🔒</span>' : '')
+              + (items.some(i=>i.groupId) ? '<span class="lock-mark" title="共同実行タスクを含む">🤝</span>' : '');
+            let gapClass = '';
+            if (hasActual){
+              const gap = planned - actual;
+              if (gap > 2) gapClass = 'gap-warn'; else if (Math.abs(gap) <= 0.5) gapClass = 'gap-ok';
+            }
+            const hoursText = '<div class="cell-hours">計 '+planned+'h' + (hasActual ? (' / <span class="'+gapClass+'">実 '+actual+'h</span>') : '') + '</div>';
+            bodyHtml = '<div class="cell-dots">'+dots+'</div>'+hoursText;
+          }
+
+          return '<td class="day-cell'+(inMonth?'':' muted')+(isOffDay && items.length===0 ? ' offday' : '')+'" data-week="'+weekStartIso+'" data-date="'+dateIso+'" data-member="'+encodeURIComponent(member.name)+'">'
+            + '<div class="day-num">'+fmtShort(d)+'</div>' + bodyHtml + '</td>';
+        }).join('');
+        const wGoalData = wk.weeklyGoals && wk.weeklyGoals[member.name];
+        let goalPreview = '';
+        if (wGoalData && Array.isArray(wGoalData.goals) && wGoalData.goals.length){
+          const doneCount = wGoalData.goals.filter(g=>g.done).length;
+          goalPreview = '<div class="member-goal-preview">🎯 '+doneCount+'/'+wGoalData.goals.length+' 達成</div>';
+        } else if (wGoalData && wGoalData.goal){
+          goalPreview = '<div class="member-goal-preview">🎯 '+escapeHtml(wGoalData.goal)+'</div>';
+        }
+        return '<tr><td class="member-col">'+escapeHtml(member.name)+goalPreview+'</td>'+cells+'</tr>';
+      }).join('');
+
+      const headCells = WEEKDAY_LABELS.map(l=>'<th>'+l+'</th>').join('');
+      let gapClass = 'neutral';
+      if (weekAnyActual){
+        const gap = weekPlanned - weekActual;
+        gapClass = Math.abs(gap) <= 1 ? 'ok' : (gap > 1 ? 'warn' : '');
+      }
+      const actualPct = weekPlanned>0 ? Math.min(100, Math.round((weekActual/weekPlanned)*100)) : 0;
+      const rangeLabel = fmtShort(days[0])+'('+WEEKDAY_LABELS[0]+') 〜 '+fmtShort(days[6])+'('+WEEKDAY_LABELS[6]+')';
+      weeklyStats.push({ label: fmtShort(days[0])+'〜'+fmtShort(days[6]), planned: weekPlanned, actual: weekActual, hasActual: weekAnyActual });
+
+      return '<div class="week-card">'
+        + '<div class="week-head">'
+        + '<div class="range">'+rangeLabel+'</div>'
+        + '<div class="gapbar-wrap">'
+        + '<span>計画 '+weekPlanned.toFixed(1)+'h</span>'
+        + '<div class="gapbar '+gapClass+'"><div class="planned-fill"></div><div class="actual-fill" style="width:'+actualPct+'%"></div></div>'
+        + '<span>'+(weekAnyActual? ('実績 '+weekActual.toFixed(1)+'h') : '実績未入力')+'</span>'
+        + '</div></div>'
+        + '<div class="week-wrap"><table class="week-grid"><thead><tr><th class="member-col">メンバー</th>'+headCells+'</tr></thead><tbody>'+bodyRows+'</tbody></table></div>'
+        + '</div>';
+    }).join('');
+
+    container.innerHTML = cardsHtml;
+
+    const efficiencyPct = (monthHasActual && monthPlanned>0) ? Math.round((monthActual/monthPlanned)*100) : null;
+    let effBadgeClass = 'neutral', effLabel = '実績未入力';
+    if (efficiencyPct !== null){
+      effLabel = '工数消化率 ' + efficiencyPct + '%';
+      effBadgeClass = efficiencyPct <= 90 ? 'good' : (efficiencyPct > 110 ? 'warn' : 'neutral');
+    }
+    const kpiStat = categoryStats['KPI'] || { planned:0, actual:0 };
+    const kpiEffPct = kpiStat.planned>0 ? Math.round((kpiStat.actual/kpiStat.planned)*100) : null;
+
+    document.getElementById('monthSummary').innerHTML =
+      '<div class="stat"><div class="num">'+monthPlanned.toFixed(1)+'h</div><div class="lbl">今月の計画合計</div></div>'
+      + '<div class="stat"><div class="num">'+(monthHasActual? monthActual.toFixed(1) : '-')+'h</div><div class="lbl">今月の実績合計</div></div>'
+      + '<div class="stat"><div class="num">'+(monthHasActual? (monthPlanned-monthActual).toFixed(1) : '-')+'h</div><div class="lbl">ギャップ（計画−実績）</div></div>'
+      + '<div class="stat"><span class="eff-badge '+effBadgeClass+'">'+effLabel+'</span><div class="lbl" style="margin-top:6px;">100%未満＝計画より短時間で消化</div></div>'
+      + '<div class="stat"><span class="kpi-badge">⚡ KPI前倒し達成 '+kpiAheadCount+'件</span>'
+      + (kpiEffPct!==null ? ('<div class="lbl" style="margin-top:6px;">KPI消化率 '+kpiEffPct+'%</div>') : '<div class="lbl" style="margin-top:6px;">KPIの実績未入力</div>')
+      + '</div>';
+
+    updateCharts(categoryStats, weeklyStats);
+    renderAnalytics(perMemberStats, taskList);
+
+    document.querySelectorAll('#weeksContainer td.day-cell').forEach(td=>{
+      td.addEventListener('click', ()=> openDayModal(td.dataset.week, td.dataset.date, decodeURIComponent(td.dataset.member)));
+    });
+
+    if (typeof renderPersonalPage === 'function') renderPersonalPage();
+  }
+
+  function updateCharts(categoryStats, weeklyStats){
+    if (typeof Chart === 'undefined'){
+      console.warn('Chart.js が読み込めなかったため、グラフは表示されません');
+      const msg = '<div class="chart-empty">グラフライブラリの読み込みに失敗しました（通信環境をご確認のうえ再読み込みしてください）</div>';
+      const c1 = document.getElementById('categoryChart'), c2 = document.getElementById('weeklyChart');
+      if (c1 && c1.parentElement) c1.parentElement.innerHTML = msg;
+      if (c2 && c2.parentElement) c2.parentElement.innerHTML = msg;
+      return;
+    }
+    const catLabels = CATEGORIES;
+    const catPlanned = catLabels.map(c => (categoryStats[c] ? categoryStats[c].planned : 0));
+    const catActual = catLabels.map(c => (categoryStats[c] ? categoryStats[c].actual : 0));
+    const catCtx = document.getElementById('categoryChart').getContext('2d');
+    if (categoryChartInstance) categoryChartInstance.destroy();
+    categoryChartInstance = new Chart(catCtx, {
+      type: 'bar',
+      data: { labels: catLabels, datasets: [
+        { label: '計画(h)', data: catPlanned, backgroundColor: cssVar('--off','#C9CDD3') },
+        { label: '実績(h)', data: catActual, backgroundColor: cssVar('--routine','#2F6D6E') }
+      ]},
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, color: cssVar('--text-muted','#6B7280') } } },
+        scales: { x: { beginAtZero: true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } }
+      }
+    });
+
+    const wLabels = weeklyStats.map(w => w.label);
+    const wPlanned = weeklyStats.map(w => w.planned);
+    const wActual = weeklyStats.map(w => w.hasActual ? w.actual : null);
+    const weekCtx = document.getElementById('weeklyChart').getContext('2d');
+    if (weeklyChartInstance) weeklyChartInstance.destroy();
+    weeklyChartInstance = new Chart(weekCtx, {
+      type: 'bar',
+      data: { labels: wLabels, datasets: [
+        { label: '計画(h)', data: wPlanned, backgroundColor: cssVar('--off','#C9CDD3') },
+        { label: '実績(h)', data: wActual, backgroundColor: cssVar('--kpi','#A9720F') }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, color: cssVar('--text-muted','#6B7280') } } },
+        scales: { y: { beginAtZero: true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } }
+      }
+    });
+  }
+
+  // ==========================================================
+  // 日別入力モーダル
+  // ==========================================================
+  let memberKdiCache = {}; // member名 -> [{content, axis}] のキャッシュ
+
+  function refreshMemberKdis(member){
+    // {source:'server'} でキャッシュを経由せず必ず最新を取得する
+    return db.collection('goals').doc(member).get({ source: 'server' }).then(snap=>{
+      const data = snap.exists ? snap.data() : null;
+      const kdis = (data && Array.isArray(data.kdis)) ? data.kdis.map(k=>({ content: k.content||'', axis: k.axis||'' })).filter(k=>k.content.trim()!=='') : [];
+      memberKdiCache[member] = kdis;
+      if (editing && editing.member === member){
+        editing.memberKdis = kdis;
+        renderItemsEditor();
+      }
+      return kdis;
+    }).catch(e=>{
+      console.error('member kdi fetch failed', e);
+      // サーバーに届かない場合はキャッシュ済みの内容にフォールバック
+      return db.collection('goals').doc(member).get().then(snap=>{
+        const data = snap.exists ? snap.data() : null;
+        const kdis = (data && Array.isArray(data.kdis)) ? data.kdis.map(k=>({ content: k.content||'', axis: k.axis||'' })).filter(k=>k.content.trim()!=='') : [];
+        memberKdiCache[member] = kdis;
+        if (editing && editing.member === member){ editing.memberKdis = kdis; renderItemsEditor(); }
+        return kdis;
+      }).catch(()=>[]);
+    });
+  }
+
+  function openDayModal(weekStartIso, dateIso, member){
+    const dayData = getDayData(weekStartIso, dateIso, member);
+    const originalItems = JSON.parse(JSON.stringify(dayData.items || []));
+    const itemsCopy = JSON.parse(JSON.stringify(originalItems));
+    editing = { weekStartIso, dateIso, member, items: itemsCopy, originalItems, memberKdis: memberKdiCache[member] || [] };
+
+    const d = parseIso(dateIso);
+    const dayIdx = (d.getDay()+6)%7;
+    const m = findMember(member);
+    const isOffDay = m && (m.offDays||[]).includes(dayIdx);
+    document.getElementById('modalTitle').textContent = (d.getMonth()+1)+'月'+d.getDate()+'日（'+WEEKDAY_LABELS[dayIdx]+'）・'+member + (isOffDay ? '（休み）' : '');
+    document.getElementById('modalSub').textContent = '計画は週初めに、実績は週終わりに入力してください';
+    renderItemsEditor();
+    document.getElementById('dayOverlay').classList.remove('hidden');
+
+    // その人自身のKDI一覧を取得（🎯KGI・KPI・KDI画面で登録したもの）。取得できたら選択肢を更新する
+    refreshMemberKdis(member);
+  }
+
+
+  function buildUrlLinesHtml(urls){
+    const lines = (urls && urls.length ? urls : ['']).map((u, ui)=>
+      '<div class="url-line" data-uidx="'+ui+'">'
+      + '<input class="f-url" type="url" placeholder="🔗 関連URL（誰が何を作ったか・触ったかに飛べるリンク）" value="'+escapeHtml(u||'')+'">'
+      + '<a class="url-open-btn'+(u?'':' disabled')+'" href="'+(u?escapeHtml(u):'#')+'" target="_blank" rel="noopener" title="URLを開く">開く</a>'
+      + '<button class="del-btn url-del-btn" title="このURLを削除">×</button>'
+      + '</div>'
+    ).join('');
+    return lines + '<button class="add-url-btn" type="button">＋ URLを追加</button>';
+  }
+  function attachUrlRowEvents(idx, row){
+    const it = editing.items[idx];
+    it.urls = it.urls || [''];
+    row.querySelectorAll('.url-line').forEach(line=>{
+      const ui = Number(line.dataset.uidx);
+      const urlInput = line.querySelector('.f-url');
+      const urlOpenBtn = line.querySelector('.url-open-btn');
+      urlInput.addEventListener('input', e=>{
+        it.urls[ui] = e.target.value.trim();
+        if (it.urls[ui]){
+          urlOpenBtn.href = it.urls[ui];
+          urlOpenBtn.classList.remove('disabled');
+        } else {
+          urlOpenBtn.href = '#';
+          urlOpenBtn.classList.add('disabled');
+        }
+      });
+      urlOpenBtn.addEventListener('click', e=>{ if (urlOpenBtn.classList.contains('disabled')) e.preventDefault(); });
+      line.querySelector('.url-del-btn').addEventListener('click', ()=>{
+        it.urls.splice(ui,1);
+        row.innerHTML = buildUrlLinesHtml(it.urls);
+        attachUrlRowEvents(idx, row);
+      });
+    });
+    const addBtn = row.querySelector('.add-url-btn');
+    if (addBtn){
+      addBtn.addEventListener('click', ()=>{
+        it.urls.push('');
+        row.innerHTML = buildUrlLinesHtml(it.urls);
+        attachUrlRowEvents(idx, row);
+      });
+    }
+  }
+
+  function renderItemsEditor(){
+    const wrap = document.getElementById('itemsContainer');
+    if (editing.items.length === 0){
+      wrap.innerHTML = '<p style="color:var(--text-muted); font-size:12.5px;">まだタスクがありません。「＋ タスクを追加」から入力してください。</p>';
+      updateDayTotal();
+      return;
+    }
+    wrap.innerHTML = editing.items.map((it, idx)=>{
+      const catOptions = CATEGORIES.map(c=> '<option value="'+c+'"'+(it.category===c?' selected':'')+'>'+c+'</option>').join('');
+      const otherMembers = members.map(m=>m.name).filter(n=> n !== editing.member);
+      const coChips = otherMembers.map(n=>
+        '<label class="comember-chip"><input type="checkbox" class="c-comember" value="'+escapeHtml(n)+'"'+((it.coMembers||[]).includes(n)?' checked':'')+'> '+escapeHtml(n)+'</label>'
+      ).join('');
+      it.urls = it.urls || (it.url ? [it.url] : []); // 旧形式(url単体)からの移行
+      const memberKdis = editing.memberKdis || [];
+      const textFieldHtml = (it.category === 'KDI' && memberKdis.length)
+        ? '<select class="f-text f-kdi-select"><option value="">KDIを選択…</option>'
+          + memberKdis.map(k=> '<option value="'+escapeHtml(k.content)+'"'+(it.text===k.content?' selected':'')+'>'+(k.axis?('['+escapeHtml(k.axis)+'] '):'')+escapeHtml(k.content.length>40? k.content.slice(0,40)+'…' : k.content)+'</option>').join('')
+          + '</select>'
+        : '<input class="f-text" type="text" list="presetList_'+CATEGORY_KEY[it.category]+'" placeholder="'+(it.category==='KDI' ? 'タスク内容（🎯画面でKDIを登録すると選択式になります）' : 'タスク内容')+'" value="'+escapeHtml(it.text||'')+'">';
+      return '<div class="item-row" data-idx="'+idx+'">'
+        + '<select class="f-cat">'+catOptions+'</select>'
+        + textFieldHtml
+        + '<input class="f-planned" type="number" step="0.5" min="0" placeholder="計画h" value="'+(it.planned??'')+'">'
+        + '<input class="f-actual" type="number" step="0.5" min="0" placeholder="実績h" value="'+(it.actual??'')+'">'
+        + '<span class="priv-toggle'+(it.private?' active':'')+'" title="個人的な予定の目印にする（内容は全員に見えます）">'+(it.private?'🔒':'🔓')+'</span>'
+        + '<button class="del-btn" title="削除">×</button>'
+        + '</div>'
+        + '<div class="item-url-row" data-idx="'+idx+'">' + buildUrlLinesHtml(it.urls) + '</div>'
+        + '<div class="item-memo-row"><input class="f-memo" type="text" placeholder="メモ（ギャップの理由など）" value="'+escapeHtml(it.memo||'')+'"></div>'
+        + (otherMembers.length ? ('<div class="item-comembers-row" data-idx="'+idx+'"><span class="comember-label">🤝 共同実行者：</span>'+coChips+'</div>') : '');
+    }).join('');
+
+    wrap.querySelectorAll('.item-row').forEach(row=>{
+      const idx = Number(row.dataset.idx);
+      row.querySelector('.f-cat').addEventListener('change', e=>{
+        editing.items[idx].category = e.target.value;
+        renderItemsEditor();
+        if (e.target.value === 'KDI') refreshMemberKdis(editing.member);
+      });
+      row.querySelector('.f-text').addEventListener('input', e=>{
+        editing.items[idx].text = e.target.value;
+        // プリセット名と完全一致したら、URL未入力の場合に限り自動補完する（プリセットの全URLをコピー）
+        const cat = editing.items[idx].category;
+        const preset = (presetTasks[cat]||[]).find(p=> p.name === e.target.value.trim());
+        const presetUrls = preset ? (preset.urls || (preset.url ? [preset.url] : [])) : [];
+        if (presetUrls.length && (!editing.items[idx].urls || editing.items[idx].urls.length===0)){
+          editing.items[idx].urls = presetUrls.slice();
+          const urlRow = wrap.querySelector('.item-url-row[data-idx="'+idx+'"]');
+          if (urlRow){
+            urlRow.innerHTML = buildUrlLinesHtml(editing.items[idx].urls);
+            attachUrlRowEvents(idx, urlRow);
+          }
+        }
+      });
+      row.querySelector('.f-planned').addEventListener('input', e=>{ editing.items[idx].planned = e.target.value===''? null : Number(e.target.value); updateDayTotal(); });
+      row.querySelector('.f-actual').addEventListener('input', e=>{ editing.items[idx].actual = e.target.value===''? null : Number(e.target.value); updateDayTotal(); });
+      row.querySelector('.priv-toggle').addEventListener('click', ()=>{ editing.items[idx].private = !editing.items[idx].private; renderItemsEditor(); });
+      row.querySelector('.del-btn').addEventListener('click', ()=>{ editing.items.splice(idx,1); renderItemsEditor(); });
+    });
+    wrap.querySelectorAll('.item-url-row').forEach(row=>{
+      const idx = Number(row.dataset.idx);
+      attachUrlRowEvents(idx, row);
+    });
+    wrap.querySelectorAll('.item-memo-row .f-memo').forEach((inp, idx)=>{
+      inp.addEventListener('input', e=>{ editing.items[idx].memo = e.target.value; });
+    });
+    wrap.querySelectorAll('.item-comembers-row').forEach(row=>{
+      const idx = Number(row.dataset.idx);
+      row.querySelectorAll('.c-comember').forEach(cb=>{
+        cb.addEventListener('change', e=>{
+          const it = editing.items[idx];
+          it.coMembers = it.coMembers || [];
+          if (e.target.checked){
+            if (!it.coMembers.includes(e.target.value)) it.coMembers.push(e.target.value);
+          } else {
+            it.coMembers = it.coMembers.filter(n=>n!==e.target.value);
+          }
+        });
+      });
+    });
+    updateDayTotal();
+  }
+
+  function updateDayTotal(){
+    const planned = sumPlanned(editing.items);
+    const actual = sumActual(editing.items);
+    const has = anyActual(editing.items);
+    document.getElementById('dayTotal').textContent = '計画 '+planned.toFixed(1)+'h' + (has ? ' ／ 実績 '+actual.toFixed(1)+'h' : '');
+  }
+
+  document.getElementById('addItemBtn').addEventListener('click', ()=>{
+    editing.items.push({ id: 'i'+Date.now()+Math.random().toString(36).slice(2,6), category:'定型', text:'', planned:null, actual:null, memo:'', private:false, coMembers:[], urls:[] });
+    renderItemsEditor();
+  });
+  document.getElementById('cancelDay').addEventListener('click', ()=>{
+    document.getElementById('dayOverlay').classList.add('hidden');
+    editing = null;
+  });
+  document.getElementById('saveDay').addEventListener('click', async ()=>{
+    const cleaned = editing.items.filter(i => i.text && i.text.trim() !== '');
+    cleaned.forEach(i=>{
+      i.urls = (i.urls || []).map(u=>(u||'').trim()).filter(u=>u!=='');
+      delete i.url; // 旧形式のフィールドは使わない
+    });
+
+    // ---- 共同実行者への反映 ----
+    // 1) 以前は共同実行者だったが、今回外れた/タスク自体が消えた場合、その人の側のコピーを削除
+    (editing.originalItems || []).forEach(origItem=>{
+      const stillExists = cleaned.find(i=>i.id===origItem.id);
+      const newCoMembers = stillExists ? (stillExists.coMembers||[]) : [];
+      (origItem.coMembers||[]).forEach(coMember=>{
+        if (!newCoMembers.includes(coMember)){
+          const coDay = getDayData(editing.weekStartIso, editing.dateIso, coMember);
+          coDay.items = (coDay.items||[]).filter(x => x.groupId !== origItem.id);
+        }
+      });
+    });
+    // 2) 現在共同実行者が設定されている項目を、各人の同じ日にコピー（既にあれば内容を更新、実績時間は個人ごとに維持）
+    cleaned.forEach(item=>{
+      if (item.coMembers && item.coMembers.length){
+        const groupId = item.id;
+        item.coMembers.forEach(coMember=>{
+          const coDay = getDayData(editing.weekStartIso, editing.dateIso, coMember);
+          coDay.items = coDay.items || [];
+          const existingIdx = coDay.items.findIndex(x=>x.groupId === groupId);
+          if (existingIdx >= 0){
+            coDay.items[existingIdx] = {
+              ...coDay.items[existingIdx],
+              category: item.category, text: item.text, planned: item.planned, memo: item.memo, urls: (item.urls||[]).slice()
+            };
+          } else {
+            coDay.items.push({
+              id: 'i'+Date.now()+Math.random().toString(36).slice(2,6),
+              groupId: groupId, category: item.category, text: item.text,
+              planned: item.planned, actual: null, memo: item.memo, urls: (item.urls||[]).slice(),
+              private: false, coMembers: []
+            });
+          }
+        });
+      }
+    });
+
+    const dayObj = getDayData(editing.weekStartIso, editing.dateIso, editing.member);
+    dayObj.items = cleaned;
+    const ok = await saveWeek(editing.weekStartIso);
+    document.getElementById('dayOverlay').classList.add('hidden');
+    if (ok) showToast('保存しました（共同実行者にも反映されます）'); else showToast('保存に失敗しました。もう一度お試しください');
+    editing = null;
+    // onSnapshot が発火して自動的に再描画されるが、通信遅延に備えて即時にも反映
+    renderCalendar();
+  });
+
+  // ==========================================================
+  // メンバー・休日設定モーダル
+  // ==========================================================
+  function renderMemberList(){
+    const el = document.getElementById('memberList');
+    el.innerHTML = members.map((m,idx)=>{
+      const chips = WEEKDAY_LABELS.map((label,i)=>
+        '<button class="wd-chip'+((m.offDays||[]).includes(i)?' off':'')+'" data-midx="'+idx+'" data-day="'+i+'">'+label+'</button>'
+      ).join('');
+      return '<div class="member-row">'
+        + '<div class="top-line"><span>'+escapeHtml(m.name)+'</span><button class="del-btn" data-idx="'+idx+'">×</button></div>'
+        + '<div class="weekday-toggles">'+chips+'</div>'
+        + '<div class="wd-note">グレー＝休みの日（自動で「休み」表示）</div>'
+        + '</div>';
+    }).join('');
+    el.querySelectorAll('.wd-chip').forEach(chip=>{
+      chip.addEventListener('click', async ()=>{
+        const midx = Number(chip.dataset.midx), day = Number(chip.dataset.day);
+        const m = members[midx];
+        m.offDays = m.offDays || [];
+        const pos = m.offDays.indexOf(day);
+        if (pos >= 0) m.offDays.splice(pos,1); else m.offDays.push(day);
+        await saveMembers();
+        renderMemberList();
+      });
+    });
+    el.querySelectorAll('.del-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        members.splice(Number(btn.dataset.idx),1);
+        await saveMembers();
+        renderMemberList();
+      });
+    });
+  }
+  document.getElementById('openMembers').addEventListener('click', ()=>{
+    renderMemberList();
+    document.getElementById('memberOverlay').classList.remove('hidden');
+  });
+  document.getElementById('closeMembers').addEventListener('click', ()=>{
+    document.getElementById('memberOverlay').classList.add('hidden');
+  });
+  document.getElementById('addMemberBtn').addEventListener('click', async ()=>{
+    const inp = document.getElementById('newMemberInput');
+    const name = inp.value.trim();
+    if (!name) return;
+    if (!members.some(m=>m.name===name)) members.push({ name, offDays: [5,6] });
+    inp.value = '';
+    await saveMembers();
+    renderMemberList();
+  });
+
+  // ==========================================================
+  // 随時タスク一覧モーダル
+  // ==========================================================
+  function renderPresetTabs(){
+    const el = document.getElementById('presetTabs');
+    el.innerHTML = CATEGORIES.map(c=>
+      '<button class="preset-tab'+(c===selectedPresetCategory?' active':'')+'" data-cat="'+c+'">'+c+'</button>'
+    ).join('');
+    el.querySelectorAll('.preset-tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedPresetCategory = btn.dataset.cat;
+        renderPresetTabs();
+        renderStandbyModal();
+      });
+    });
+  }
+  let newStandbyUrls = [''];
+
+  function renderStandbyModal(){
+    const el = document.getElementById('standbyListEl');
+    const list = presetTasks[selectedPresetCategory] || [];
+    if (list.length === 0){
+      el.innerHTML = '<p style="color:var(--text-muted); font-size:12.5px;">「'+selectedPresetCategory+'」にはまだ登録がありません。下から追加してください。</p>';
+    } else {
+      el.innerHTML = list.map((t,idx)=>{
+        const urls = t.urls || (t.url ? [t.url] : []);
+        const links = urls.map(u=>'<a href="'+escapeHtml(u)+'" target="_blank" rel="noopener" title="'+escapeHtml(u)+'" style="margin-right:4px; text-decoration:none;">🔗</a>').join('');
+        return '<div class="standby-row">'+links+'<span class="name">'+escapeHtml(t.name)+'</span><span class="note">'+escapeHtml(t.note||'')+'</span>'
+          + '<button class="btn ghost add-preset-url-btn" data-idx="'+idx+'" style="padding:2px 8px; font-size:11px;">＋URL</button>'
+          + '<button class="del-btn" data-idx="'+idx+'">×</button></div>';
+      }).join('');
+      el.querySelectorAll('.del-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          presetTasks[selectedPresetCategory].splice(Number(btn.dataset.idx),1);
+          await savePresets();
+          renderStandbyModal();
+        });
+      });
+      el.querySelectorAll('.add-preset-url-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const t = presetTasks[selectedPresetCategory][Number(btn.dataset.idx)];
+          const newUrl = window.prompt('追加するURLを入力してください');
+          if (newUrl && newUrl.trim()){
+            t.urls = t.urls || (t.url ? [t.url] : []);
+            t.urls.push(newUrl.trim());
+            delete t.url;
+            await savePresets();
+            renderStandbyModal();
+          }
+        });
+      });
+    }
+  }
+  function renderNewStandbyUrls(){
+    const el = document.getElementById('newStandbyUrlsContainer');
+    el.innerHTML = newStandbyUrls.map((u,ui)=>
+      '<div style="display:flex; gap:6px;"><input type="url" class="new-standby-url" data-uidx="'+ui+'" placeholder="🔗 関連URL（任意）" value="'+escapeHtml(u)+'" style="flex:1; border:1px solid var(--border); border-radius:6px; padding:6px 9px; background:var(--surface); color:var(--text); font-family:var(--sans);">'
+      + '<button class="del-btn" type="button" data-uidx="'+ui+'">×</button></div>'
+    ).join('') + '<button class="add-url-btn" type="button" id="addStandbyUrlLineBtn">＋ URLを追加</button>';
+    el.querySelectorAll('.new-standby-url').forEach(inp=>{
+      inp.addEventListener('input', e=>{ newStandbyUrls[Number(inp.dataset.uidx)] = e.target.value; });
+    });
+    el.querySelectorAll('.del-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ newStandbyUrls.splice(Number(btn.dataset.uidx),1); if(newStandbyUrls.length===0) newStandbyUrls=['']; renderNewStandbyUrls(); });
+    });
+    const addBtn = document.getElementById('addStandbyUrlLineBtn');
+    if (addBtn) addBtn.addEventListener('click', ()=>{ newStandbyUrls.push(''); renderNewStandbyUrls(); });
+  }
+  document.getElementById('openStandby').addEventListener('click', ()=>{
+    renderPresetTabs();
+    renderStandbyModal();
+    newStandbyUrls = [''];
+    renderNewStandbyUrls();
+    document.getElementById('standbyOverlay').classList.remove('hidden');
+  });
+  document.getElementById('closeStandby').addEventListener('click', ()=>{
+    document.getElementById('standbyOverlay').classList.add('hidden');
+  });
+  document.getElementById('addStandbyBtn').addEventListener('click', async ()=>{
+    const nameInp = document.getElementById('newStandbyName');
+    const noteInp = document.getElementById('newStandbyNote');
+    const name = nameInp.value.trim();
+    if (!name) return;
+    if (!presetTasks[selectedPresetCategory]) presetTasks[selectedPresetCategory] = [];
+    const urls = newStandbyUrls.map(u=>(u||'').trim()).filter(u=>u!=='');
+    presetTasks[selectedPresetCategory].push({ id: 'p'+Date.now()+Math.random().toString(36).slice(2,6), name, urls, note: noteInp.value.trim() });
+    nameInp.value = ''; noteInp.value = '';
+    newStandbyUrls = [''];
+    renderNewStandbyUrls();
+    await savePresets();
+    renderStandbyModal();
+  });
+
+  // ==========================================================
+  // エクスポート / インポート
+  // ==========================================================
+  async function exportAll(){
+    showToast('エクスポート準備中…');
+    try{
+      const weeksSnap = await db.collection('weeks').get();
+      const weeks = {};
+      weeksSnap.forEach(doc => { weeks[doc.id] = doc.data(); });
+      const goalsSnap = await db.collection('goals').get();
+      const goals = {};
+      goalsSnap.forEach(doc => { goals[doc.id] = doc.data(); });
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        members, presetTasks, weeks, goals
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '月次計画カレンダー_backup_' + isoDate(new Date()) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showToast('エクスポートしました');
+    }catch(e){
+      console.error('export failed', e);
+      showToast('エクスポートに失敗しました');
+    }
+  }
+  async function importAll(file){
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const ok = window.confirm('読み込んだ内容を現在のデータに追加・更新します（既存の週データは、インポート側に含まれる日付・メンバーの分だけが上書きされ、それ以外は保持されます）。よろしいですか？');
+      if (!ok) return;
+      if (Array.isArray(data.members)) { members = data.members; await saveMembers(); }
+      if (data.presetTasks && typeof data.presetTasks === 'object'){
+        CATEGORIES.forEach(c => { presetTasks[c] = Array.isArray(data.presetTasks[c]) ? data.presetTasks[c] : (presetTasks[c]||[]); });
+        await savePresets();
+      } else if (Array.isArray(data.standbyTasks)) {
+        // 旧形式（随時タスクのみ）のバックアップにも対応
+        presetTasks["随時"] = data.standbyTasks;
+        await savePresets();
+      }
+      if (data.weeks){
+        const batchEntries = Object.entries(data.weeks);
+        for (const [k, v] of batchEntries){
+          let existing = {};
+          try {
+            const snap = await db.collection('weeks').doc(k).get();
+            if (snap.exists) existing = snap.data() || {};
+          } catch(e){ /* 既存データなし・取得失敗時は空として扱う */ }
+          const merged = { days: existing.days || {}, weeklyGoals: existing.weeklyGoals || {} };
+          if (v.days){
+            // 日付・メンバー単位でのマージ（インポート側の該当日・該当メンバーだけを上書き、他は温存）
+            Object.keys(v.days).forEach(dateIso=>{
+              merged.days[dateIso] = merged.days[dateIso] || {};
+              Object.keys(v.days[dateIso]).forEach(memberName=>{
+                merged.days[dateIso][memberName] = v.days[dateIso][memberName];
+              });
+            });
+          }
+          if (v.weeklyGoals){
+            // メンバー単位でのマージ（インポート側にあるメンバーの週目標だけを上書き、他メンバーは温存）
+            Object.keys(v.weeklyGoals).forEach(memberName=>{
+              merged.weeklyGoals[memberName] = v.weeklyGoals[memberName];
+            });
+          }
+          await db.collection('weeks').doc(k).set(merged);
+        }
+      }
+      if (data.goals){
+        for (const [memberName, incoming] of Object.entries(data.goals)){
+          let existing = {};
+          try {
+            const snap = await db.collection('goals').doc(memberName).get();
+            if (snap.exists) existing = snap.data() || {};
+          } catch(e){ /* 既存データなしとして扱う */ }
+
+          const merged = {
+            period: existing.period || incoming.period || "",
+            kgi: (existing.kgi && existing.kgi.text) ? existing.kgi : (incoming.kgi || { text: "", status: "未着手" }),
+            kpis: Array.isArray(existing.kpis) ? existing.kpis.slice() : [],
+            bonusItems: Array.isArray(existing.bonusItems) ? existing.bonusItems.slice() : [],
+            kdis: Array.isArray(existing.kdis) ? existing.kdis.slice() : []
+          };
+          // 既存にある項目と全く同じ内容（text/content）のものは追加しない（重複防止）
+          const appendUnique = (list, items, key) => {
+            const existingTexts = new Set(list.map(x => (x[key]||'').trim()));
+            (items||[]).forEach(item=>{
+              const val = (item[key]||'').trim();
+              if (val && !existingTexts.has(val)){
+                list.push(item);
+                existingTexts.add(val);
+              }
+            });
+          };
+          appendUnique(merged.kpis, incoming.kpis, 'content');
+          appendUnique(merged.bonusItems, incoming.bonusItems, 'content');
+          appendUnique(merged.kdis, incoming.kdis, 'content');
+
+          await db.collection('goals').doc(memberName).set(merged);
+        }
+      }
+      showToast('インポートしました');
+    }catch(e){
+      console.error('import failed', e);
+      showToast('インポートに失敗しました。ファイル形式を確認してください');
+    }
+  }
+  document.getElementById('exportBtn').addEventListener('click', exportAll);
+  document.getElementById('importBtn').addEventListener('click', ()=>{
+    document.getElementById('importFileInput').click();
+  });
+  document.getElementById('importFileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if (file) await importAll(file);
+    e.target.value = '';
+  });
+
+  // ==========================================================
+  // 月移動
+  // ==========================================================
+  function goToMonth(){
+    renderMonthLabel();
+    const list = getMonthWeekStarts(curYear, curMonth).map(isoDate);
+    ensureWeekSubscription(list);
+    renderCalendar();
+    if (typeof renderPersonalPage === 'function') renderPersonalPage();
+  }
+  document.getElementById('prevMonth').addEventListener('click', ()=>{
+    curMonth -= 1; if (curMonth<0){ curMonth=11; curYear-=1; }
+    goToMonth();
+  });
+  document.getElementById('nextMonth').addEventListener('click', ()=>{
+    curMonth += 1; if (curMonth>11){ curMonth=0; curYear+=1; }
+    goToMonth();
+  });
+  document.getElementById('personalPrevMonth').addEventListener('click', ()=>{
+    curMonth -= 1; if (curMonth<0){ curMonth=11; curYear-=1; }
+    goToMonth();
+  });
+  document.getElementById('personalNextMonth').addEventListener('click', ()=>{
+    curMonth += 1; if (curMonth>11){ curMonth=0; curYear+=1; }
+    goToMonth();
+  });
+
+  // ==========================================================
+  // 初期化
+  // ==========================================================
+  document.querySelectorAll('.member-mode-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.member-mode-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      memberChartMode = btn.dataset.mode;
+      drawMemberChart();
+    });
+  });
+  renderLegend();
+  renderMonthLabel();
+  subscribeTheme();
+  subscribeMembers();
+  subscribePresets();
+  ensureWeekSubscription(getMonthWeekStarts(curYear, curMonth).map(isoDate));
+})();
+</script>
+<script>
+(function(){
+  // Firebaseは月次カレンダー側で初期化済みのものをそのまま利用
+  const db = firebase.firestore();
+
+  const STATUS_LIST = ["未着手","進行中","完了","遅延"];
+  const DEFAULT_MEMBERS = ["中村代理","波多野さん","國分さん","はなさん"];
+  const FISCAL_MONTHS = ["2026年8月","2026年9月","2026年10月","2026年11月","2026年12月","2027年1月","2027年2月","2027年3月","2027年4月","2027年5月","2027年6月","2027年7月"];
+
+  function setSyncStatus(text, color){
+    const el = document.getElementById('syncStatus');
+    el.textContent = '● ' + text;
+    el.style.color = color || 'var(--text-muted)';
+  }
+  function showToast(msg){
+    const t = document.getElementById('saveToast');
+    t.textContent = msg || '保存しました';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1600);
+  }
+  function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function uid(prefix){ return prefix + Date.now() + Math.random().toString(36).slice(2,6); }
+  function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+  function emptyGoalDoc(){
+    return {
+      period: "2026.08〜2027.07",
+      kgi: { text: "", status: "未着手" },
+      kpis: [],
+      bonusItems: [],
+      kdis: []
+    };
+  }
+
+  let members = [];
+  let membersReady = false;
+  let activeTab = null; // メンバー名 または '__summary__'
+  let draft = null;     // 現在編集中メンバーのgoalsドラフト
+  let dirty = false;
+  let unsubGoalDoc = null;
+  let allGoalsCache = {};   // summary表示用（全メンバー分）
+  let unsubAllGoals = null;
+  let reviewDraft = null;
+  let reviewDirty = false;
+  let unsubReview = null;
+
+  // ==========================================================
+  // メンバー一覧の購読（カレンダーツールと同じappData/membersを再利用）
+  // ==========================================================
+  function subscribeMembers(){
+    db.collection('appData').doc('members').onSnapshot((doc)=>{
+      const data = doc.exists ? doc.data() : null;
+      const list = (data && Array.isArray(data.list)) ? data.list.map(m=> typeof m==='string'? m : m.name) : DEFAULT_MEMBERS;
+      members = list;
+      membersReady = true;
+      if (!activeTab) activeTab = members[0] || '__summary__';
+      renderTabs();
+      renderContent();
+    }, err=>{
+      console.error('members onSnapshot error', err);
+      members = DEFAULT_MEMBERS;
+      membersReady = true;
+      if (!activeTab) activeTab = members[0];
+      renderTabs(); renderContent();
+    });
+  }
+
+  function renderTabs(){
+    const el = document.getElementById('tabbar');
+    el.innerHTML = members.map(m=>
+      '<button class="tab-btn'+(activeTab===m?' active':'')+'" data-tab="'+escapeHtml(m)+'">'+escapeHtml(m)+'</button>'
+    ).join('') + '<button class="tab-btn summary'+(activeTab==='__summary__'?' active':'')+'" data-tab="__summary__">📊 進捗サマリー</button>';
+    el.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if (dirty && !confirm('未保存の変更があります。保存せずに移動しますか？')) return;
+        activeTab = btn.dataset.tab;
+        dirty = false;
+        renderTabs();
+        renderContent();
+      });
+    });
+  }
+
+  // ==========================================================
+  // 個人のKGI/KPI/KDIドキュメント
+  // ==========================================================
+  function subscribeMemberGoals(member){
+    if (unsubGoalDoc) { unsubGoalDoc(); unsubGoalDoc = null; }
+    document.getElementById('content').innerHTML = '<div class="loading-note">読み込み中…</div>';
+    unsubGoalDoc = db.collection('goals').doc(member).onSnapshot(async (doc)=>{
+      if (dirty) return; // 編集中はリモート更新を反映しない（上書き事故防止）
+      if (!doc.exists){
+        draft = emptyGoalDoc();
+        try { await db.collection('goals').doc(member).set(draft); } catch(e){ console.error('seed goal doc failed', e); }
+      } else {
+        draft = doc.data();
+        draft.kpis = draft.kpis || [];
+        draft.bonusItems = draft.bonusItems || [];
+        draft.kdis = draft.kdis || [];
+        draft.kgi = draft.kgi || { text:'', status:'未着手' };
+      }
+      recomputeKpiAutoStatus();
+      setSyncStatus('リアルタイム同期中', 'var(--ok)');
+      renderMemberDetail();
+    }, err=>{ console.error('goal doc onSnapshot error', err); setSyncStatus('同期エラー', 'var(--warn)'); });
+  }
+
+  function recomputeKpiAutoStatus(){
+    // 紐づくKDIがすべて「済」になったKPIは自動的に「完了」にする（一方向のみ・手動でのダウングレードは尊重する）
+    if (!draft || !Array.isArray(draft.kpis) || !Array.isArray(draft.kdis)) return;
+    draft.kpis.forEach(kpi=>{
+      const linked = draft.kdis.filter(k=> k.linkedKpiId === kpi.id);
+      if (linked.length > 0 && linked.every(k=> k.done === '済')){
+        kpi.status = '完了';
+      }
+    });
+  }
+
+  async function saveCurrentMemberGoals(){
+    try {
+      await db.collection('goals').doc(activeTab).set(draft);
+      dirty = false;
+      showToast('保存しました（全員に反映されます）');
+      renderMemberDetail();
+    } catch(e){
+      console.error('save goal doc failed', e);
+      showToast('保存に失敗しました');
+    }
+  }
+
+  function markDirty(){ dirty = true; renderSaveBar(); }
+
+  function renderMemberDetail(){
+    const el = document.getElementById('content');
+    const axisOptions = [...new Set([...(draft.kpis||[]).map(k=>k.axis), ...(draft.kdis||[]).map(k=>k.axis)].filter(Boolean))];
+
+    let html = '';
+
+    // ---- KGI ----
+    html += '<div class="card">'
+      + '<h2>▌ KGI（最終ゴール）</h2>'
+      + '<p class="desc">対象期間：<input type="text" id="periodInput" value="'+escapeHtml(draft.period||'')+'" style="border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:12px; width:180px;"></p>'
+      + '<div class="field grow" style="margin-bottom:8px;"><label>内容</label><textarea id="kgiText" style="min-height:90px;">'+escapeHtml(draft.kgi.text)+'</textarea></div>'
+      + '<div class="field"><label>ステータス</label><select id="kgiStatus" class="status-select '+draft.kgi.status+'">'
+      + STATUS_LIST.map(s=>'<option value="'+s+'"'+(draft.kgi.status===s?' selected':'')+'>'+s+'</option>').join('')
+      + '</select></div>'
+      + '</div>';
+
+    // ---- KPI ----
+    html += '<div class="card"><h2>▌ KPI（中間指標）</h2><p class="desc">まず2〜3個・確実にクリアできる項目を設定（評価設計の防衛策）</p>';
+    const kpiByAxis = {};
+    (draft.kpis||[]).forEach((k,idx)=>{ const a = k.axis || '（軸未設定）'; (kpiByAxis[a]=kpiByAxis[a]||[]).push(idx); });
+    Object.keys(kpiByAxis).forEach(axis=>{
+      html += '<div class="axis-group"><span class="axis-group-title">'+escapeHtml(axis)+'</span>';
+      kpiByAxis[axis].forEach(idx=>{ html += renderKpiCard(draft.kpis[idx], idx, axisOptions); });
+      html += '</div>';
+    });
+    if ((draft.kpis||[]).length===0) html += '<p style="color:var(--text-muted); font-size:12.5px;">まだKPIがありません。</p>';
+    html += '<button class="add-btn" id="addKpiBtn">＋ KPIを追加</button></div>';
+
+    // ---- 加点要素 ----
+    html += '<div class="card"><h2>▌ 加点要素（評価B以上を狙うプラスアルファ）</h2><p class="desc">表には出さず裏で準備しておく項目</p>';
+    (draft.bonusItems||[]).forEach((b,idx)=>{
+      html += '<div class="item-card" data-bidx="'+idx+'"><button class="del-btn" data-del-bonus="'+idx+'">×</button>'
+        + '<div class="field grow"><label>内容</label><input type="text" class="b-content" value="'+escapeHtml(b.content||'')+'"></div>'
+        + '<div class="field grow" style="margin-top:6px;"><label>メモ</label><input type="text" class="b-memo" value="'+escapeHtml(b.memo||'')+'"></div>'
+        + '</div>';
+    });
+    html += '<button class="add-btn" id="addBonusBtn">＋ 加点要素を追加</button></div>';
+
+    // ---- KDI ----
+    html += '<div class="card"><h2>▌ KDI / KDA（行動指標・日次〜週次の習慣）</h2>';
+    const kdiByAxis = {};
+    (draft.kdis||[]).forEach((k,idx)=>{ const a = k.axis || '（軸未設定）'; (kdiByAxis[a]=kdiByAxis[a]||[]).push(idx); });
+    Object.keys(kdiByAxis).forEach(axis=>{
+      html += '<div class="axis-group"><span class="axis-group-title">'+escapeHtml(axis)+'</span>';
+      kdiByAxis[axis].forEach(idx=>{ html += renderKdiCard(draft.kdis[idx], idx, axisOptions); });
+      html += '</div>';
+    });
+    if ((draft.kdis||[]).length===0) html += '<p style="color:var(--text-muted); font-size:12.5px;">まだKDIがありません。</p>';
+    html += '<button class="add-btn" id="addKdiBtn">＋ KDIを追加</button></div>';
+
+    html += '<div class="save-bar"><span class="dirty-note" id="dirtyNote"></span><div><button class="btn ghost" id="reloadBtn">最新の内容に戻す</button> <button class="btn primary" id="saveGoalsBtn">💾 保存</button></div></div>';
+
+    el.innerHTML = html;
+    attachMemberDetailEvents(axisOptions);
+    renderSaveBar();
+  }
+
+  function renderKpiCard(k, idx, axisOptions){
+    const linkedKdis = (draft.kdis||[]).filter(d=>d.linkedKpiId === k.id);
+    const kdiBadge = linkedKdis.length
+      ? '<span class="badge '+(linkedKdis.every(d=>d.done==='済')?'完了':'進行中')+'" style="margin-left:8px;">🔗 紐づくKDI '+linkedKdis.filter(d=>d.done==='済').length+'/'+linkedKdis.length+' 達成</span>'
+      : '';
+    return '<div class="item-card" data-kidx="'+idx+'"><button class="del-btn" data-del-kpi="'+idx+'">×</button>'
+      + '<div class="field-row">'
+      + '<div class="field"><label>軸</label><input type="text" class="k-axis" list="axisOptionsList" value="'+escapeHtml(k.axis||'')+'" style="width:120px;"></div>'
+      + '<div class="field"><label>期限</label><input type="text" class="k-deadline" value="'+escapeHtml(k.deadline||'')+'" style="width:120px;" placeholder="例:202707まで"></div>'
+      + '<div class="field"><label>ステータス</label><select class="k-status status-select '+ (k.status||'未着手') +'">'+STATUS_LIST.map(s=>'<option value="'+s+'"'+((k.status||'未着手')===s?' selected':'')+'>'+s+'</option>').join('')+'</select>'+kdiBadge+'</div>'
+      + '<div class="field"><label>更新日</label><input type="date" class="k-updated" value="'+escapeHtml(k.updatedAt||'')+'"></div>'
+      + '</div>'
+      + '<div class="field grow" style="margin-bottom:6px;"><label>内容</label><textarea class="k-content">'+escapeHtml(k.content||'')+'</textarea></div>'
+      + '<div class="field grow" style="margin-bottom:6px;"><label>目標・完了基準</label><textarea class="k-criteria">'+escapeHtml(k.targetCriteria||'')+'</textarea></div>'
+      + '<div class="field grow" style="margin-bottom:6px;"><label>直近アクション</label><input type="text" class="k-lastaction" value="'+escapeHtml(k.lastAction||'')+'"></div>'
+      + '<div class="field grow"><label>メモ・課題</label><input type="text" class="k-memo" value="'+escapeHtml(k.memo||'')+'"></div>'
+      + '</div>';
+  }
+  function renderKdiCard(k, idx, axisOptions){
+    const kpiOptions = '<option value="">（KPIに未紐づけ）</option>' + (draft.kpis||[]).map(kp=>{
+      const label = (kp.content||'（内容未入力）').replace(/\s+/g,' ').slice(0,30);
+      return '<option value="'+kp.id+'"'+(k.linkedKpiId===kp.id?' selected':'')+'>'+escapeHtml(label)+(kp.content&&kp.content.length>30?'…':'')+'</option>';
+    }).join('');
+    return '<div class="item-card" data-kdidx="'+idx+'"><button class="del-btn" data-del-kdi="'+idx+'">×</button>'
+      + '<div class="field-row">'
+      + '<div class="field"><label>軸</label><input type="text" class="d-axis" list="axisOptionsList" value="'+escapeHtml(k.axis||'')+'" style="width:120px;"></div>'
+      + '<div class="field"><label>頻度</label><input type="text" class="d-freq" value="'+escapeHtml(k.frequency||'')+'" style="width:110px;" placeholder="例:月1回"></div>'
+      + '<div class="field"><label>実施確認</label><select class="d-done">'
+      + '<option value=""'+(!k.done?' selected':'')+'>未実施</option><option value="済"'+(k.done==='済'?' selected':'')+'>済</option>'
+      + '</select></div>'
+      + '<div class="field"><label>更新日</label><input type="date" class="d-updated" value="'+escapeHtml(k.updatedAt||'')+'"></div>'
+      + '</div>'
+      + '<div class="field grow" style="margin-bottom:6px;"><label>紐づくKPI（すべての紐づけKDIが「済」になると、そのKPIは自動的に「完了」になります）</label><select class="d-linked-kpi">'+kpiOptions+'</select></div>'
+      + '<div class="field grow" style="margin-bottom:6px;"><label>行動内容</label><textarea class="d-content">'+escapeHtml(k.content||'')+'</textarea></div>'
+      + '<div class="field grow"><label>メモ</label><input type="text" class="d-memo" value="'+escapeHtml(k.memo||'')+'"></div>'
+      + '</div>';
+  }
+
+  function attachMemberDetailEvents(axisOptions){
+    const el = document.getElementById('content');
+
+    // axis datalist
+    if (!document.getElementById('axisOptionsList')){
+      const dl = document.createElement('datalist');
+      dl.id = 'axisOptionsList';
+      document.body.appendChild(dl);
+    }
+    document.getElementById('axisOptionsList').innerHTML = axisOptions.map(a=>'<option value="'+escapeHtml(a)+'">').join('');
+
+    document.getElementById('periodInput').addEventListener('input', e=>{ draft.period = e.target.value; markDirty(); });
+    document.getElementById('kgiText').addEventListener('input', e=>{ draft.kgi.text = e.target.value; markDirty(); });
+    document.getElementById('kgiStatus').addEventListener('change', e=>{ draft.kgi.status = e.target.value; markDirty(); });
+
+    el.querySelectorAll('[data-kidx]').forEach(card=>{
+      const idx = Number(card.dataset.kidx);
+      const k = draft.kpis[idx];
+      card.querySelector('.k-axis').addEventListener('input', e=>{ k.axis = e.target.value; markDirty(); });
+      card.querySelector('.k-deadline').addEventListener('input', e=>{ k.deadline = e.target.value; markDirty(); });
+      card.querySelector('.k-status').addEventListener('change', e=>{ k.status = e.target.value; markDirty(); });
+      card.querySelector('.k-updated').addEventListener('input', e=>{ k.updatedAt = e.target.value; markDirty(); });
+      card.querySelector('.k-content').addEventListener('input', e=>{ k.content = e.target.value; markDirty(); });
+      card.querySelector('.k-criteria').addEventListener('input', e=>{ k.targetCriteria = e.target.value; markDirty(); });
+      card.querySelector('.k-lastaction').addEventListener('input', e=>{ k.lastAction = e.target.value; markDirty(); });
+      card.querySelector('.k-memo').addEventListener('input', e=>{ k.memo = e.target.value; markDirty(); });
+    });
+    el.querySelectorAll('[data-del-kpi]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ draft.kpis.splice(Number(btn.dataset.delKpi),1); markDirty(); renderMemberDetail(); });
+    });
+
+    el.querySelectorAll('[data-kdidx]').forEach(card=>{
+      const idx = Number(card.dataset.kdidx);
+      const k = draft.kdis[idx];
+      card.querySelector('.d-axis').addEventListener('input', e=>{ k.axis = e.target.value; markDirty(); });
+      card.querySelector('.d-freq').addEventListener('input', e=>{ k.frequency = e.target.value; markDirty(); });
+      card.querySelector('.d-done').addEventListener('change', e=>{
+        k.done = e.target.value; markDirty();
+        recomputeKpiAutoStatus();
+        renderMemberDetail();
+      });
+      card.querySelector('.d-linked-kpi').addEventListener('change', e=>{
+        k.linkedKpiId = e.target.value || null; markDirty();
+        recomputeKpiAutoStatus();
+        renderMemberDetail();
+      });
+      card.querySelector('.d-updated').addEventListener('input', e=>{ k.updatedAt = e.target.value; markDirty(); });
+      card.querySelector('.d-content').addEventListener('input', e=>{ k.content = e.target.value; markDirty(); });
+      card.querySelector('.d-memo').addEventListener('input', e=>{ k.memo = e.target.value; markDirty(); });
+    });
+    el.querySelectorAll('[data-del-kdi]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ draft.kdis.splice(Number(btn.dataset.delKdi),1); markDirty(); renderMemberDetail(); });
+    });
+
+    el.querySelectorAll('[data-bidx]').forEach(card=>{
+      const idx = Number(card.dataset.bidx);
+      const b = draft.bonusItems[idx];
+      card.querySelector('.b-content').addEventListener('input', e=>{ b.content = e.target.value; markDirty(); });
+      card.querySelector('.b-memo').addEventListener('input', e=>{ b.memo = e.target.value; markDirty(); });
+    });
+    el.querySelectorAll('[data-del-bonus]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ draft.bonusItems.splice(Number(btn.dataset.delBonus),1); markDirty(); renderMemberDetail(); });
+    });
+
+    document.getElementById('addKpiBtn').addEventListener('click', ()=>{
+      draft.kpis.push({ id: uid('kpi'), axis:'', content:'', targetCriteria:'', deadline:'', status:'未着手', lastAction:'', updatedAt: todayStr(), memo:'' });
+      markDirty(); renderMemberDetail();
+    });
+    document.getElementById('addKdiBtn').addEventListener('click', ()=>{
+      draft.kdis.push({ id: uid('kdi'), axis:'', content:'', frequency:'', done:'', updatedAt: todayStr(), memo:'', linkedKpiId:null });
+      markDirty(); renderMemberDetail();
+    });
+    document.getElementById('addBonusBtn').addEventListener('click', ()=>{
+      draft.bonusItems.push({ id: uid('bonus'), content:'', memo:'' });
+      markDirty(); renderMemberDetail();
+    });
+
+    document.getElementById('saveGoalsBtn').addEventListener('click', saveCurrentMemberGoals);
+    document.getElementById('reloadBtn').addEventListener('click', ()=>{
+      if (!confirm('未保存の変更を破棄して、最新の内容に戻します。よろしいですか？')) return;
+      dirty = false;
+      subscribeMemberGoals(activeTab);
+    });
+  }
+
+  function renderSaveBar(){
+    const note = document.getElementById('dirtyNote');
+    if (note) note.textContent = dirty ? '● 未保存の変更があります' : '';
+  }
+
+  // ==========================================================
+  // 進捗サマリー
+  // ==========================================================
+  function subscribeAllGoals(){
+    if (unsubAllGoals) return; // 一度購読したら維持（タブ切替のたびに張り直さない）
+    unsubAllGoals = db.collection('goals').onSnapshot(snapshot=>{
+      snapshot.forEach(doc=>{ allGoalsCache[doc.id] = doc.data(); });
+      if (activeTab === '__summary__') renderSummary();
+    }, err=> console.error('all goals onSnapshot error', err));
+  }
+
+  function renderSummary(){
+    const el = document.getElementById('content');
+    let rows = '';
+    members.forEach(member=>{
+      const g = allGoalsCache[member];
+      if (!g || !Array.isArray(g.kpis) || g.kpis.length===0){
+        rows += '<tr><td class="member-head">'+escapeHtml(member)+'</td><td colspan="5" style="color:var(--text-muted);">KPI未設定</td></tr>';
+        return;
+      }
+      g.kpis.forEach((k, i)=>{
+        rows += '<tr>'
+          + (i===0 ? '<td class="member-head" rowspan="'+g.kpis.length+'">'+escapeHtml(member)+'</td>' : '')
+          + '<td>'+escapeHtml(k.axis||'')+'</td>'
+          + '<td>'+escapeHtml((k.content||'').slice(0,60))+((k.content||'').length>60?'…':'')+'</td>'
+          + '<td>'+escapeHtml(k.deadline||'')+'</td>'
+          + '<td><span class="badge '+(k.status||'未着手')+'">'+(k.status||'未着手')+'</span></td>'
+          + '<td>'+escapeHtml(k.lastAction||'')+'</td>'
+          + '</tr>';
+      });
+    });
+
+    let html = '<div class="card"><h2>▌ KPI進捗一覧</h2><p class="desc">全員のKPI進捗をまとめて確認できます</p>'
+      + '<table class="summary-table"><thead><tr><th>担当者</th><th>軸</th><th>KPI内容</th><th>期限</th><th>ステータス</th><th>直近アクション</th></tr></thead><tbody>'
+      + rows + '</tbody></table></div>';
+
+    html += '<div class="card"><h2>▌ 月次レビューメモ</h2><p class="desc">月次で成果・課題を記録し、次回の会議テーマにつなげます</p>'
+      + '<div style="overflow-x:auto;"><table class="review-table" id="reviewTable"></table></div>'
+      + '<div class="save-bar" style="margin-top:10px;"><span class="dirty-note" id="reviewDirtyNote"></span><button class="btn primary" id="saveReviewBtn">💾 レビューメモを保存</button></div>'
+      + '</div>';
+
+    el.innerHTML = html;
+    renderReviewTable();
+  }
+
+  function subscribeReview(){
+    if (unsubReview) return;
+    unsubReview = db.collection('appData').doc('reviewNotes').onSnapshot(doc=>{
+      if (reviewDirty) return;
+      const data = doc.exists ? doc.data() : null;
+      reviewDraft = (data && Array.isArray(data.rows)) ? data.rows : FISCAL_MONTHS.map(m=>({ month:m, perMember:{}, commonAction:'', nextTopic:'' }));
+      if (activeTab === '__summary__') renderReviewTable();
+    }, err=> console.error('review onSnapshot error', err));
+  }
+
+  function renderReviewTable(){
+    if (!reviewDraft) return;
+    const table = document.getElementById('reviewTable');
+    if (!table) return;
+    let head = '<thead><tr><th>対象月</th>';
+    members.forEach(m=>{ head += '<th>成果・進捗（'+escapeHtml(m)+'）</th><th>課題・懸念点（'+escapeHtml(m)+'）</th>'; });
+    head += '<th>共通アクション</th><th>次回会議テーマ</th></tr></thead>';
+
+    let body = '<tbody>';
+    reviewDraft.forEach((row, ridx)=>{
+      row.perMember = row.perMember || {};
+      body += '<tr><td style="white-space:nowrap; font-weight:600;">'+escapeHtml(row.month)+'</td>';
+      members.forEach(m=>{
+        const pm = row.perMember[m] || { achievements:'', concerns:'' };
+        body += '<td><textarea class="review-cell" data-ridx="'+ridx+'" data-member="'+escapeHtml(m)+'" data-field="achievements">'+escapeHtml(pm.achievements)+'</textarea></td>';
+        body += '<td><textarea class="review-cell" data-ridx="'+ridx+'" data-member="'+escapeHtml(m)+'" data-field="concerns">'+escapeHtml(pm.concerns)+'</textarea></td>';
+      });
+      body += '<td><textarea class="review-cell" data-ridx="'+ridx+'" data-field="commonAction">'+escapeHtml(row.commonAction||'')+'</textarea></td>';
+      body += '<td><textarea class="review-cell" data-ridx="'+ridx+'" data-field="nextTopic">'+escapeHtml(row.nextTopic||'')+'</textarea></td>';
+      body += '</tr>';
+    });
+    body += '</tbody>';
+    table.innerHTML = head + body;
+
+    table.querySelectorAll('.review-cell').forEach(cell=>{
+      cell.addEventListener('input', e=>{
+        const ridx = Number(e.target.dataset.ridx);
+        const field = e.target.dataset.field;
+        const member = e.target.dataset.member;
+        if (member){
+          reviewDraft[ridx].perMember[member] = reviewDraft[ridx].perMember[member] || {};
+          reviewDraft[ridx].perMember[member][field] = e.target.value;
+        } else {
+          reviewDraft[ridx][field] = e.target.value;
+        }
+        reviewDirty = true;
+        const note = document.getElementById('reviewDirtyNote');
+        if (note) note.textContent = '● 未保存の変更があります';
+      });
+    });
+    const saveBtn = document.getElementById('saveReviewBtn');
+    if (saveBtn) saveBtn.onclick = async ()=>{
+      try {
+        await db.collection('appData').doc('reviewNotes').set({ rows: reviewDraft });
+        reviewDirty = false;
+        showToast('レビューメモを保存しました');
+        renderReviewTable();
+      } catch(e){ console.error('review save failed', e); showToast('保存に失敗しました'); }
+    };
+  }
+
+  // ==========================================================
+  // タブ切り替えに応じたコンテンツ描画
+  // ==========================================================
+  function renderContent(){
+    if (!membersReady) return;
+    if (activeTab === '__summary__'){
+      subscribeAllGoals();
+      subscribeReview();
+      if (Object.keys(allGoalsCache).length===0 && !reviewDraft){
+        document.getElementById('content').innerHTML = '<div class="loading-note">読み込み中…</div>';
+      } else {
+        renderSummary();
+      }
+    } else {
+      subscribeMemberGoals(activeTab);
+    }
+  }
+
+  // ==========================================================
+  // 初期化
+  // ==========================================================
+  subscribeMembers();
+})();
+</script>
+
+<script>
+(function(){
+  function showPage(page){
+    document.querySelectorAll('.page-tab').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
+    document.getElementById('app').style.display = (page === 'calendar') ? '' : 'none';
+    document.getElementById('personalPage').style.display = (page === 'personal') ? '' : 'none';
+    document.getElementById('goalsPage').style.display = (page === 'goals') ? '' : 'none';
+    document.getElementById('analyticsPage').style.display = (page === 'analytics') ? '' : 'none';
+    if (page === 'personal' && typeof renderPersonalPage === 'function') renderPersonalPage();
+  }
+  document.querySelectorAll('.page-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=> showPage(btn.dataset.page));
+  });
+})();
+</script>
