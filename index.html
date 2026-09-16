@@ -136,6 +136,8 @@
   .priv-toggle { display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; }
   .priv-toggle.active { color: var(--adhoc); }
   .priv-toggle:not(.active) { color: #C7CCD3; }
+  .item-biz-row { display:flex; gap:8px; margin: 4px 0 4px 84px; }
+  .item-biz-row select { flex:1; border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:11.5px; font-family:var(--sans); background:var(--surface-alt); color:var(--text); }
   .item-url-row { margin: 4px 0 4px 84px; display:flex; flex-direction:column; gap:5px; }
   .url-line { display:flex; align-items:center; gap:6px; }
   .url-line .f-url { flex:1; border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:11.5px; font-family:var(--sans); background:var(--surface-alt); color:var(--text); }
@@ -373,7 +375,9 @@
   <button class="page-tab active" data-page="calendar">📅 月次カレンダー</button>
   <button class="page-tab" data-page="personal">🧑 個人カレンダー</button>
   <button class="page-tab" data-page="goals">🎯 KGI・KPI・KDI</button>
-  <button class="page-tab" data-page="analytics">📊 詳細分析</button>
+  <button class="page-tab" data-page="analytics">📊 総務部詳細分析</button>
+  <button class="page-tab" data-page="soumu-analysis">📊 総務課分析</button>
+  <button class="page-tab" data-page="houmu-analysis">📊 法務課分析</button>
   <button class="mini-tab" id="openThemeBtn" style="margin-left:6px;">🎨 デザイン</button>
   <span class="page-sync" id="syncStatus">● 接続中…</span>
 </div>
@@ -413,6 +417,7 @@
         <button id="nextMonth">›</button>
       </div>
       <button class="icon-btn" id="openStandby">📋 タスク登録リスト</button>
+      <button class="icon-btn" id="openBizCategory">📁 業務カテゴリ管理</button>
       <button class="icon-btn" id="openMembers">⚙ メンバー・休日設定</button>
       <button class="icon-btn" id="exportBtn">⬇ エクスポート</button>
       <button class="icon-btn" id="importBtn">⬆ インポート</button>
@@ -483,7 +488,7 @@
 <div id="analyticsPage" style="display:none">
   <header class="top">
     <div class="title-block">
-      <h1>詳細分析</h1>
+      <h1>総務部詳細分析（法務課＋総務課 合算）</h1>
       <p>月次カレンダーで表示している月と連動して、人別・タスク別の内訳を表示します</p>
     </div>
   </header>
@@ -498,6 +503,14 @@
     <p class="desc" id="memberChartPeriodLabel" style="margin:2px 0 8px;"></p>
     <div class="chart-wrap"><canvas id="memberChart"></canvas></div>
   </div>
+
+  <div class="card">
+    <h2>▌ 課別 工数（法務課／総務課）</h2>
+    <p class="desc">月次カレンダーで表示している月の、所属課ごとの計画・実績合計です。カテゴリ別の内訳は「総務課分析」「法務課分析」タブをご覧ください。</p>
+    <div class="month-summary" id="deptStatsCards" style="margin-bottom:14px;"></div>
+    <div class="chart-wrap" style="height:180px;"><canvas id="deptChart"></canvas></div>
+  </div>
+
   <div class="card">
     <h2>▌ タスク別 明細</h2>
     <p class="desc">この月に入力された全タスクの一覧です（🔒非公開のタスクは内容が伏せられます）</p>
@@ -511,6 +524,44 @@
 
     <h3 style="font-size:12.5px; margin:14px 0 8px; color:var(--text-muted);">明細（1件ずつ）</h3>
     <div style="overflow-x:auto;"><table class="summary-table" id="taskDetailTable"></table></div>
+  </div>
+</div>
+
+<div id="soumuAnalysisPage" style="display:none">
+  <header class="top">
+    <div class="title-block">
+      <h1>総務課分析</h1>
+      <p>総務課メンバーだけに絞った、業務カテゴリ別・人別の工数分析です</p>
+    </div>
+  </header>
+  <div class="chart-card" style="margin-bottom:16px;">
+    <h3 style="margin:0 0 8px;">総務課メンバー別 工数内訳（計画 vs 実績）</h3>
+    <div class="chart-wrap"><canvas id="deptMemberChart_総務課"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>▌ 定型業務 業務カテゴリ別 工数（総務課）</h2>
+    <p class="desc">中カテゴリ・小カテゴリごとに、誰がどれだけ担当しているかも合わせて確認できます</p>
+    <div class="chart-wrap"><canvas id="bizCategoryChart_総務課"></canvas></div>
+    <div style="overflow-x:auto; margin-top:14px;"><table class="summary-table" id="bizCategoryTable_総務課"></table></div>
+  </div>
+</div>
+
+<div id="houmuAnalysisPage" style="display:none">
+  <header class="top">
+    <div class="title-block">
+      <h1>法務課分析</h1>
+      <p>法務課メンバーだけに絞った、業務カテゴリ別・人別の工数分析です</p>
+    </div>
+  </header>
+  <div class="chart-card" style="margin-bottom:16px;">
+    <h3 style="margin:0 0 8px;">法務課メンバー別 工数内訳（計画 vs 実績）</h3>
+    <div class="chart-wrap"><canvas id="deptMemberChart_法務課"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>▌ 定型業務 業務カテゴリ別 工数（法務課）</h2>
+    <p class="desc">中カテゴリ・小カテゴリごとに、誰がどれだけ担当しているかも合わせて確認できます</p>
+    <div class="chart-wrap"><canvas id="bizCategoryChart_法務課"></canvas></div>
+    <div style="overflow-x:auto; margin-top:14px;"><table class="summary-table" id="bizCategoryTable_法務課"></table></div>
   </div>
 </div>
 
@@ -569,6 +620,27 @@
   </div>
 </div>
 
+<div class="overlay hidden" id="bizCategoryOverlay">
+  <div class="modal narrow">
+    <h2>業務カテゴリ管理（定型業務の分析用）</h2>
+    <p class="sub">「定型」タスクを業務カテゴリ(中)／(小)で分類するための一覧です。部署ごとに別々に管理します。</p>
+    <div style="display:flex; gap:8px; margin-bottom:14px;" id="bizDeptTabs"></div>
+    <div class="preset-tabs" id="bizCategoryTabs" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;"></div>
+    <div id="bizSubcategoryListEl"></div>
+    <div class="standby-add" style="flex-wrap:wrap;">
+      <input type="text" class="name" id="newBizSubcategoryName" placeholder="小カテゴリ名（選択中の中カテゴリの下に追加）">
+      <button class="btn primary" id="addBizSubcategoryBtn">追加</button>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="newBizCategoryName" placeholder="新しい中カテゴリ名" style="border:1px solid var(--border); border-radius:6px; padding:8px 10px; background:var(--surface); color:var(--text); font-family:var(--sans);">
+        <button class="btn ghost" id="addBizCategoryBtn">＋ 中カテゴリ追加</button>
+      </div>
+      <button class="btn ghost" id="closeBizCategory">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <div class="save-toast" id="saveToast">保存しました</div>
 
 <script>
@@ -593,11 +665,12 @@
   }
 
   const DEFAULT_MEMBERS = [
-    { name: "中村代理", offDays: [5,6] },
-    { name: "波多野さん", offDays: [5,6] },
-    { name: "國分さん", offDays: [5,6] },
-    { name: "はなさん", offDays: [5,6] }
+    { name: "中村代理", offDays: [5,6], department: "総務課" },
+    { name: "波多野さん", offDays: [5,6], department: "総務課" },
+    { name: "國分さん", offDays: [5,6], department: "総務課" },
+    { name: "はなさん", offDays: [5,6], department: "法務課" }
   ];
+  const DEPARTMENTS = ["総務課", "法務課"];
   const CATEGORIES = ["定型", "KPI", "KDI", "随時", "その他"];
   const CAT_COLOR = { "定型": "var(--routine)", "KPI": "var(--kpi)", "KDI": "var(--kdi)", "随時": "var(--adhoc)", "その他": "var(--other)" };
   const CATEGORY_KEY = { "定型": "teikei", "KPI": "kpi", "KDI": "kdi", "随時": "zuiji", "その他": "other" };
@@ -824,6 +897,15 @@
       }
       const data = doc.data();
       members = (data && Array.isArray(data.list)) ? data.list : DEFAULT_MEMBERS.map(m=>({...m}));
+      // 旧データ（department未設定）への移行：はなさんは法務課、それ以外は総務課とみなす
+      let migrated = false;
+      members.forEach(m=>{
+        if (!m.department){
+          m.department = (m.name === 'はなさん') ? '法務課' : '総務課';
+          migrated = true;
+        }
+      });
+      if (migrated) saveMembers();
       membersReady = true;
       renderCalendar();
       if (!document.getElementById('memberOverlay').classList.contains('hidden')) renderMemberList();
@@ -858,6 +940,58 @@
   async function savePresets(){
     try { await db.collection('appData').doc('presetTasks').set({ byCategory: presetTasks }); }
     catch(e){ console.error('presetTasks save failed', e); showToast('タスク登録リストの保存に失敗しました'); }
+  }
+
+  // ==========================================================
+  // 業務カテゴリ(中)/(小)マスタ（定型業務の分析用・部署ごとに管理）
+  // ==========================================================
+  const DEFAULT_BIZ_CATEGORIES = {
+    "総務課": {
+      "会議、研修": ["会議体"],
+      "施主管理": ["契約書管理", "鍵引渡管理", "施主引渡書類", "士業対応"],
+      "備品管理": ["たのめーる管理", "リース管理", "消耗品管理", "資産有効活用", "施設備品修理", "インフラ管理", "名刺管理", "飲料管理"],
+      "車両管理": ["社有車管理", "カード管理", "マイカー管理", "安全運転教育", "事故・トラブル", "駐車場管理", "社有車保険管理", "コンプライアンス", "コスト管理", "入社者対応", "外部インフラ"],
+      "施設管理": ["巡回点検", "修繕対応", "セキュリティ", "防災・防火", "防犯・カギ", "契約・インフラ", "拠点開設閉鎖", "窓口対応"],
+      "庶務": ["郵便・宅配物対応", "来客・電話応対", "慶弔・贈答対応", "社内行事・会議支援", "備品・消耗品管理", "施設・環境維持", "庶務プロセスの改善"],
+      "稟議管理": ["稟議書管理"],
+      "社宅管理": ["社宅管理"],
+      "各種届出・申請": ["各種届出・申請"]
+    },
+    "法務課": {
+      "契約審査": ["契約書レビュー", "契約ひな形整備"],
+      "コンプライアンス": ["社内規程整備", "法改正対応"],
+      "相談対応": ["現場相談", "トラブル初期対応"],
+      "研修・啓発": ["研修企画・実施", "朝礼トピック共有"],
+      "文書管理": ["契約書台帳管理", "証跡・データ整理"]
+    }
+  };
+  let bizCategories = {}; // { "総務課": {中: [小,...]}, "法務課": {...} }
+  let bizCategoriesReady = false;
+  let selectedBizDept = "総務課";
+  let selectedBizCategory = null;
+
+  function subscribeBizCategories(){
+    db.collection('appData').doc('bizCategories').onSnapshot(async (doc)=>{
+      if (!doc.exists){
+        try { await db.collection('appData').doc('bizCategories').set({ byDepartment: DEFAULT_BIZ_CATEGORIES }); }
+        catch(e){ console.error('bizCategories seed failed', e); }
+        return;
+      }
+      const data = doc.data();
+      bizCategories = (data && data.byDepartment) ? data.byDepartment : {};
+      DEPARTMENTS.forEach(d=>{ if (!bizCategories[d]) bizCategories[d] = {}; });
+      bizCategoriesReady = true;
+      if (!selectedBizCategory || !bizCategories[selectedBizDept] || !bizCategories[selectedBizDept][selectedBizCategory]){
+        selectedBizCategory = Object.keys(bizCategories[selectedBizDept] || {})[0] || null;
+      }
+      if (!document.getElementById('bizCategoryOverlay').classList.contains('hidden')) renderBizCategoryModal();
+      if (typeof renderCalendar === 'function') renderCalendar();
+      if (typeof renderDeptAnalysisPage === 'function'){ renderDeptAnalysisPage('総務課'); renderDeptAnalysisPage('法務課'); }
+    }, err => { console.error('bizCategories onSnapshot error', err); setSyncStatus('業務カテゴリの取得エラー', 'var(--warn)'); });
+  }
+  async function saveBizCategories(){
+    try { await db.collection('appData').doc('bizCategories').set({ byDepartment: bizCategories }); }
+    catch(e){ console.error('bizCategories save failed', e); showToast('業務カテゴリの保存に失敗しました'); }
   }
   function renderPresetDatalists(){
     CATEGORIES.forEach(c=>{
@@ -1180,9 +1314,11 @@
     }
   }
 
-  function renderAnalytics(perMemberStats, taskList){
+  function renderAnalytics(perMemberStats, taskList, deptStats){
     lastPerMemberStatsMonth = perMemberStats;
     drawMemberChart();
+
+    if (deptStats) renderDeptSection(deptStats);
 
     const memberSel = document.getElementById('taskFilterMember');
     const catSel = document.getElementById('taskFilterCategory');
@@ -1196,6 +1332,109 @@
       catSel.onchange = ()=>{ taskFilterCategory = catSel.value; renderTaskTable(taskList); };
     }
     renderTaskTable(taskList);
+  }
+
+  let deptChartInstance = null;
+  function renderDeptSection(deptStats){
+    const el = document.getElementById('deptStatsCards');
+    if (!el) return;
+    el.innerHTML = DEPARTMENTS.map(d=>{
+      const s = deptStats[d] || { planned:0, actual:0 };
+      const gap = (s.planned - s.actual).toFixed(1);
+      return '<div class="stat"><div class="num">'+s.planned.toFixed(1)+'h / '+s.actual.toFixed(1)+'h</div>'
+        + '<div class="lbl">'+d+'（計画 / 実績・ギャップ'+gap+'h）</div></div>';
+    }).join('');
+
+    if (typeof Chart === 'undefined') return;
+    const canvas = document.getElementById('deptChart');
+    if (!canvas) return;
+    if (deptChartInstance) deptChartInstance.destroy();
+    deptChartInstance = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels: DEPARTMENTS, datasets: [
+        { label: '計画(h)', data: DEPARTMENTS.map(d=>deptStats[d].planned), backgroundColor: cssVar('--off','#C9CDD3') },
+        { label: '実績(h)', data: DEPARTMENTS.map(d=>deptStats[d].actual), backgroundColor: cssVar('--routine','#2F6D6E') }
+      ]},
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11}, color: cssVar('--text-muted','#6B7280') } } },
+        scales:{ y:{ beginAtZero:true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } }
+      }
+    });
+  }
+
+  let lastBizStatsByDept = null;
+  let lastMonthMembers = [];
+  const deptChartInstances = {}; // dept名 -> Chart.js instance（人別）
+  const deptBizChartInstances = {}; // dept名 -> Chart.js instance（業務カテゴリ別）
+
+  function renderDeptAnalysisPage(dept){
+    if (!lastBizStatsByDept) return; // まだ月次データが読み込まれていない
+    const bizStats = lastBizStatsByDept[dept] || {};
+    const deptMembers = (lastMonthMembers || []).filter(m => (m.department||'総務課') === dept);
+
+    // 人別グラフ（その課のメンバーだけ）
+    const canvasId = 'deptMemberChart_' + dept;
+    const canvas = document.getElementById(canvasId);
+    if (canvas && typeof Chart !== 'undefined'){
+      const labels = deptMembers.map(m=>m.name);
+      const plannedArr = labels.map(name => (lastPerMemberStatsMonth && lastPerMemberStatsMonth[name]) ? lastPerMemberStatsMonth[name].planned : 0);
+      const actualArr = labels.map(name => (lastPerMemberStatsMonth && lastPerMemberStatsMonth[name]) ? lastPerMemberStatsMonth[name].actual : 0);
+      if (deptChartInstances[dept]) deptChartInstances[dept].destroy();
+      deptChartInstances[dept] = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label: '計画(h)', data: plannedArr, backgroundColor: cssVar('--off','#C9CDD3') },
+          { label: '実績(h)', data: actualArr, backgroundColor: cssVar('--routine','#2F6D6E') }
+        ]},
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11}, color: cssVar('--text-muted','#6B7280') } } },
+          scales:{ y:{ beginAtZero:true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } }
+        }
+      });
+    }
+
+    // 業務カテゴリ別グラフ
+    const catNames = Object.keys(bizStats);
+    const bizCanvas = document.getElementById('bizCategoryChart_' + dept);
+    if (bizCanvas && typeof Chart !== 'undefined'){
+      if (deptBizChartInstances[dept]) deptBizChartInstances[dept].destroy();
+      deptBizChartInstances[dept] = new Chart(bizCanvas.getContext('2d'), {
+        type: 'bar',
+        data: { labels: catNames, datasets: [
+          { label: '計画(h)', data: catNames.map(c=>bizStats[c].planned), backgroundColor: cssVar('--off','#C9CDD3') },
+          { label: '実績(h)', data: catNames.map(c=>bizStats[c].actual), backgroundColor: cssVar('--routine','#2F6D6E') }
+        ]},
+        options: {
+          indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11}, color: cssVar('--text-muted','#6B7280') } } },
+          scales:{ x:{ beginAtZero:true, ticks:{ color: cssVar('--text-muted','#6B7280') }, grid:{ color: cssVar('--border','#E3E6EA') } } }
+        }
+      });
+    }
+
+    // 業務カテゴリ別テーブル（中→小→誰が何時間）
+    const table = document.getElementById('bizCategoryTable_' + dept);
+    if (!table) return;
+    if (catNames.length === 0){
+      table.innerHTML = '<tbody><tr><td style="color:var(--text-muted); text-align:center; padding:16px;">この月は「'+dept+'」の「定型」タスクに業務カテゴリが設定されていません</td></tr></tbody>';
+      return;
+    }
+    let rows = '';
+    catNames.sort((a,b)=> bizStats[b].planned - bizStats[a].planned).forEach(c=>{
+      const s = bizStats[c];
+      rows += '<tr style="font-weight:700;"><td>'+escapeHtml(c)+'</td><td></td><td>'+s.planned.toFixed(1)+'</td><td>'+s.actual.toFixed(1)+'</td><td></td></tr>';
+      Object.keys(s.subs).sort((a,b)=> s.subs[b].planned - s.subs[a].planned).forEach(sub=>{
+        const ss = s.subs[sub];
+        const memberBreakdown = Object.entries(ss.byMember||{})
+          .sort((a,b)=> b[1].planned - a[1].planned)
+          .map(([name,v])=> escapeHtml(name)+' '+v.planned.toFixed(1)+'h'+(v.actual? '（実'+v.actual.toFixed(1)+'h）':''))
+          .join(' / ');
+        rows += '<tr><td></td><td style="color:var(--text-muted);">'+escapeHtml(sub)+'</td><td>'+ss.planned.toFixed(1)+'</td><td>'+ss.actual.toFixed(1)+'</td><td style="font-size:11px; color:var(--text-muted);">'+memberBreakdown+'</td></tr>';
+      });
+    });
+    table.innerHTML = '<thead><tr><th>業務カテゴリ(中)</th><th>業務カテゴリ(小)</th><th>計画h</th><th>実績h</th><th>誰がどれだけ</th></tr></thead><tbody>'+rows+'</tbody>';
   }
 
   function drawMemberChartWithData(perMemberStats, periodLabel){
@@ -1361,6 +1600,10 @@
     let kpiAheadCount = 0;
     const perMemberStats = {};
     members.forEach(m => { perMemberStats[m.name] = { planned: 0, actual: 0 }; });
+    const deptStats = {};
+    DEPARTMENTS.forEach(d => { deptStats[d] = { planned: 0, actual: 0 }; });
+    const bizStatsByDept = {}; // { "総務課": { "中カテゴリ": { planned, actual, subs: { "小": {planned,actual,byMember:{member:{planned,actual}}} } } }, "法務課": {...} }
+    DEPARTMENTS.forEach(d => { bizStatsByDept[d] = {}; });
     const taskList = [];
 
     const cardsHtml = weekStartsDates.map(ws => {
@@ -1380,11 +1623,35 @@
             const p = Number(it.planned) || 0;
             categoryStats[cat].planned += p;
             perMemberStats[member.name].planned += p;
+            const dept = deptStats[member.department] ? member.department : (DEPARTMENTS[0]);
+            deptStats[dept].planned += p;
+            if (it.category === '定型' && it.bizCategory){
+              const bs = bizStatsByDept[dept];
+              if (!bs[it.bizCategory]) bs[it.bizCategory] = { planned:0, actual:0, subs:{} };
+              bs[it.bizCategory].planned += p;
+              if (it.bizSubcategory){
+                if (!bs[it.bizCategory].subs[it.bizSubcategory]) bs[it.bizCategory].subs[it.bizSubcategory] = { planned:0, actual:0, byMember:{} };
+                const subEntry = bs[it.bizCategory].subs[it.bizSubcategory];
+                subEntry.planned += p;
+                if (!subEntry.byMember[member.name]) subEntry.byMember[member.name] = { planned:0, actual:0 };
+                subEntry.byMember[member.name].planned += p;
+              }
+            }
             let aVal = null;
             if (it.actual !== null && it.actual !== '' && it.actual !== undefined){
               aVal = Number(it.actual);
               categoryStats[cat].actual += aVal;
               perMemberStats[member.name].actual += aVal;
+              deptStats[dept].actual += aVal;
+              if (it.category === '定型' && it.bizCategory){
+                const bs = bizStatsByDept[dept];
+                bs[it.bizCategory].actual += aVal;
+                if (it.bizSubcategory){
+                  const subEntry = bs[it.bizCategory].subs[it.bizSubcategory];
+                  subEntry.actual += aVal;
+                  subEntry.byMember[member.name].actual += aVal;
+                }
+              }
               if (it.category === 'KPI' && it.planned !== null && it.planned !== '' && aVal < Number(it.planned)){
                 kpiAheadCount += 1;
               }
@@ -1483,7 +1750,11 @@
       + '</div>';
 
     updateCharts(categoryStats, weeklyStats);
-    renderAnalytics(perMemberStats, taskList);
+    renderAnalytics(perMemberStats, taskList, deptStats);
+    lastBizStatsByDept = bizStatsByDept;
+    lastMonthMembers = members;
+    renderDeptAnalysisPage('総務課');
+    renderDeptAnalysisPage('法務課');
 
     document.querySelectorAll('#weeksContainer td.day-cell').forEach(td=>{
       td.addEventListener('click', ()=> openDayModal(td.dataset.week, td.dataset.date, decodeURIComponent(td.dataset.member)));
@@ -1587,6 +1858,25 @@
   }
 
 
+  function buildBizCategoryRowHtml(it, idx){
+    const m = findMember(editing.member);
+    const dept = (m && m.department) ? m.department : '総務課';
+    const deptCats = bizCategories[dept] || {};
+    const catNames = Object.keys(deptCats);
+    const catOpts = '<option value="">業務カテゴリ(中)を選択</option>' + catNames.map(c=>
+      '<option value="'+escapeHtml(c)+'"'+(it.bizCategory===c?' selected':'')+'>'+escapeHtml(c)+'</option>'
+    ).join('');
+    const subs = (it.bizCategory && deptCats[it.bizCategory]) ? deptCats[it.bizCategory] : [];
+    const subOpts = '<option value="">（小）を選択</option>' + subs.map(s=>
+      '<option value="'+escapeHtml(s)+'"'+(it.bizSubcategory===s?' selected':'')+'>'+escapeHtml(s)+'</option>'
+    ).join('');
+    return '<div class="item-biz-row" data-idx="'+idx+'">'
+      + '<span style="font-size:10.5px; color:var(--text-muted); align-self:center; white-space:nowrap;">['+dept+']</span>'
+      + '<select class="f-bizcat">'+catOpts+'</select>'
+      + '<select class="f-bizsub"'+(subs.length?'':' disabled')+'>'+subOpts+'</select>'
+      + '</div>';
+  }
+
   function buildUrlLinesHtml(urls){
     const lines = (urls && urls.length ? urls : ['']).map((u, ui)=>
       '<div class="url-line" data-uidx="'+ui+'">'
@@ -1651,6 +1941,7 @@
           + memberKdis.map(k=> '<option value="'+escapeHtml(k.content)+'"'+(it.text===k.content?' selected':'')+'>'+(k.axis?('['+escapeHtml(k.axis)+'] '):'')+escapeHtml(k.content.length>40? k.content.slice(0,40)+'…' : k.content)+'</option>').join('')
           + '</select>'
         : '<input class="f-text" type="text" list="presetList_'+CATEGORY_KEY[it.category]+'" placeholder="'+(it.category==='KDI' ? 'タスク内容（🎯画面でKDIを登録すると選択式になります）' : 'タスク内容')+'" value="'+escapeHtml(it.text||'')+'">';
+      const bizRowHtml = (it.category === '定型') ? buildBizCategoryRowHtml(it, idx) : '';
       return '<div class="item-row" data-idx="'+idx+'">'
         + '<select class="f-cat">'+catOptions+'</select>'
         + textFieldHtml
@@ -1659,10 +1950,25 @@
         + '<span class="priv-toggle'+(it.private?' active':'')+'" title="個人的な予定の目印にする（内容は全員に見えます）">'+(it.private?'🔒':'🔓')+'</span>'
         + '<button class="del-btn" title="削除">×</button>'
         + '</div>'
+        + bizRowHtml
         + '<div class="item-url-row" data-idx="'+idx+'">' + buildUrlLinesHtml(it.urls) + '</div>'
         + '<div class="item-memo-row"><input class="f-memo" type="text" placeholder="メモ（ギャップの理由など）" value="'+escapeHtml(it.memo||'')+'"></div>'
         + (otherMembers.length ? ('<div class="item-comembers-row" data-idx="'+idx+'"><span class="comember-label">🤝 共同実行者：</span>'+coChips+'</div>') : '');
     }).join('');
+
+    wrap.querySelectorAll('.item-biz-row').forEach(row=>{
+      const idx = Number(row.dataset.idx);
+      const it = editing.items[idx];
+      row.querySelector('.f-bizcat').addEventListener('change', e=>{
+        it.bizCategory = e.target.value || '';
+        it.bizSubcategory = '';
+        renderItemsEditor();
+      });
+      const subSel = row.querySelector('.f-bizsub');
+      if (subSel){
+        subSel.addEventListener('change', e=>{ it.bizSubcategory = e.target.value || ''; });
+      }
+    });
 
     wrap.querySelectorAll('.item-row').forEach(row=>{
       const idx = Number(row.dataset.idx);
@@ -1723,7 +2029,7 @@
   }
 
   document.getElementById('addItemBtn').addEventListener('click', ()=>{
-    editing.items.push({ id: 'i'+Date.now()+Math.random().toString(36).slice(2,6), category:'定型', text:'', planned:null, actual:null, memo:'', private:false, coMembers:[], urls:[] });
+    editing.items.push({ id: 'i'+Date.now()+Math.random().toString(36).slice(2,6), category:'定型', text:'', planned:null, actual:null, memo:'', private:false, coMembers:[], urls:[], bizCategory:'', bizSubcategory:'' });
     renderItemsEditor();
   });
   document.getElementById('cancelDay').addEventListener('click', ()=>{
@@ -1793,8 +2099,10 @@
       const chips = WEEKDAY_LABELS.map((label,i)=>
         '<button class="wd-chip'+((m.offDays||[]).includes(i)?' off':'')+'" data-midx="'+idx+'" data-day="'+i+'">'+label+'</button>'
       ).join('');
+      const deptOptions = DEPARTMENTS.map(d=>'<option value="'+d+'"'+((m.department||'総務課')===d?' selected':'')+'>'+d+'</option>').join('');
       return '<div class="member-row">'
         + '<div class="top-line"><span>'+escapeHtml(m.name)+'</span><button class="del-btn" data-idx="'+idx+'">×</button></div>'
+        + '<div style="margin-bottom:6px;"><select class="dept-select" data-midx="'+idx+'" style="border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:12px; background:var(--surface); color:var(--text);">'+deptOptions+'</select></div>'
         + '<div class="weekday-toggles">'+chips+'</div>'
         + '<div class="wd-note">グレー＝休みの日（自動で「休み」表示）</div>'
         + '</div>';
@@ -1808,6 +2116,13 @@
         if (pos >= 0) m.offDays.splice(pos,1); else m.offDays.push(day);
         await saveMembers();
         renderMemberList();
+      });
+    });
+    el.querySelectorAll('.dept-select').forEach(sel=>{
+      sel.addEventListener('change', async ()=>{
+        members[Number(sel.dataset.midx)].department = sel.value;
+        await saveMembers();
+        renderCalendar();
       });
     });
     el.querySelectorAll('.del-btn').forEach(btn=>{
@@ -1829,7 +2144,7 @@
     const inp = document.getElementById('newMemberInput');
     const name = inp.value.trim();
     if (!name) return;
-    if (!members.some(m=>m.name===name)) members.push({ name, offDays: [5,6] });
+    if (!members.some(m=>m.name===name)) members.push({ name, offDays: [5,6], department: '総務課' });
     inp.value = '';
     await saveMembers();
     renderMemberList();
@@ -1929,6 +2244,95 @@
   });
 
   // ==========================================================
+  // 業務カテゴリ管理モーダル
+  // ==========================================================
+  function renderBizDeptTabs(){
+    const el = document.getElementById('bizDeptTabs');
+    el.innerHTML = DEPARTMENTS.map(d=>
+      '<button class="mini-tab'+(d===selectedBizDept?' active':'')+'" data-dept="'+d+'">'+d+'</button>'
+    ).join('');
+    el.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedBizDept = btn.dataset.dept;
+        selectedBizCategory = Object.keys(bizCategories[selectedBizDept] || {})[0] || null;
+        renderBizDeptTabs();
+        renderBizCategoryTabs();
+        renderBizCategoryModal();
+      });
+    });
+  }
+  function renderBizCategoryTabs(){
+    const el = document.getElementById('bizCategoryTabs');
+    const names = Object.keys(bizCategories[selectedBizDept] || {});
+    el.innerHTML = names.map(name=>
+      '<button class="preset-tab'+(name===selectedBizCategory?' active':'')+'" data-cat="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>'
+    ).join('');
+    el.querySelectorAll('.preset-tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedBizCategory = btn.dataset.cat;
+        renderBizCategoryTabs();
+        renderBizCategoryModal();
+      });
+    });
+  }
+  function renderBizCategoryModal(){
+    const el = document.getElementById('bizSubcategoryListEl');
+    const deptCats = bizCategories[selectedBizDept] || {};
+    const subs = deptCats[selectedBizCategory] || [];
+    if (!selectedBizCategory){
+      el.innerHTML = '<p style="color:var(--text-muted); font-size:12.5px;">「'+selectedBizDept+'」にはまだ中カテゴリがありません。下から追加してください。</p>';
+      return;
+    }
+    if (subs.length === 0){
+      el.innerHTML = '<p style="color:var(--text-muted); font-size:12.5px;">「'+escapeHtml(selectedBizCategory||'')+'」にはまだ小カテゴリがありません。下から追加してください。</p>';
+    } else {
+      el.innerHTML = subs.map((s,idx)=>
+        '<div class="standby-row"><span class="name">'+escapeHtml(s)+'</span><button class="del-btn" data-idx="'+idx+'">×</button></div>'
+      ).join('');
+      el.querySelectorAll('.del-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          bizCategories[selectedBizDept][selectedBizCategory].splice(Number(btn.dataset.idx),1);
+          await saveBizCategories();
+          renderBizCategoryModal();
+        });
+      });
+    }
+  }
+  document.getElementById('openBizCategory').addEventListener('click', ()=>{
+    if (!bizCategories[selectedBizDept]) bizCategories[selectedBizDept] = {};
+    if (!selectedBizCategory) selectedBizCategory = Object.keys(bizCategories[selectedBizDept])[0] || null;
+    renderBizDeptTabs();
+    renderBizCategoryTabs();
+    renderBizCategoryModal();
+    document.getElementById('bizCategoryOverlay').classList.remove('hidden');
+  });
+  document.getElementById('closeBizCategory').addEventListener('click', ()=>{
+    document.getElementById('bizCategoryOverlay').classList.add('hidden');
+  });
+  document.getElementById('addBizSubcategoryBtn').addEventListener('click', async ()=>{
+    const inp = document.getElementById('newBizSubcategoryName');
+    const name = inp.value.trim();
+    if (!name || !selectedBizCategory) return;
+    bizCategories[selectedBizDept][selectedBizCategory] = bizCategories[selectedBizDept][selectedBizCategory] || [];
+    if (!bizCategories[selectedBizDept][selectedBizCategory].includes(name)) bizCategories[selectedBizDept][selectedBizCategory].push(name);
+    inp.value = '';
+    await saveBizCategories();
+    renderBizCategoryModal();
+  });
+  document.getElementById('addBizCategoryBtn').addEventListener('click', async ()=>{
+    const inp = document.getElementById('newBizCategoryName');
+    const name = inp.value.trim();
+    if (!bizCategories[selectedBizDept]) bizCategories[selectedBizDept] = {};
+    if (!name || bizCategories[selectedBizDept][name]) return;
+    bizCategories[selectedBizDept][name] = [];
+    selectedBizCategory = name;
+    inp.value = '';
+    await saveBizCategories();
+    renderBizCategoryTabs();
+    renderBizCategoryModal();
+  });
+
+  // ==========================================================
   // エクスポート / インポート
   // ==========================================================
   async function exportAll(){
@@ -1942,7 +2346,7 @@
       goalsSnap.forEach(doc => { goals[doc.id] = doc.data(); });
       const payload = {
         exportedAt: new Date().toISOString(),
-        members, presetTasks, weeks, goals
+        members, presetTasks, bizCategories, weeks, goals
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -1998,6 +2402,19 @@
           }
           await db.collection('weeks').doc(k).set(merged);
         }
+      }
+      if (data.bizCategories){
+        // 部署ごと・中カテゴリごとにマージ（既存の小カテゴリは残しつつ、新しいものだけ追加）
+        Object.entries(data.bizCategories).forEach(([dept, cats])=>{
+          if (!bizCategories[dept]) bizCategories[dept] = {};
+          Object.entries(cats).forEach(([catName, subs])=>{
+            if (!bizCategories[dept][catName]) bizCategories[dept][catName] = [];
+            (subs||[]).forEach(sub=>{
+              if (!bizCategories[dept][catName].includes(sub)) bizCategories[dept][catName].push(sub);
+            });
+          });
+        });
+        await saveBizCategories();
       }
       if (data.goals){
         for (const [memberName, incoming] of Object.entries(data.goals)){
@@ -2091,6 +2508,7 @@
   subscribeTheme();
   subscribeMembers();
   subscribePresets();
+  subscribeBizCategories();
   ensureWeekSubscription(getMonthWeekStarts(curYear, curMonth).map(isoDate));
 })();
 </script>
@@ -2550,7 +2968,11 @@
     document.getElementById('personalPage').style.display = (page === 'personal') ? '' : 'none';
     document.getElementById('goalsPage').style.display = (page === 'goals') ? '' : 'none';
     document.getElementById('analyticsPage').style.display = (page === 'analytics') ? '' : 'none';
+    document.getElementById('soumuAnalysisPage').style.display = (page === 'soumu-analysis') ? '' : 'none';
+    document.getElementById('houmuAnalysisPage').style.display = (page === 'houmu-analysis') ? '' : 'none';
     if (page === 'personal' && typeof renderPersonalPage === 'function') renderPersonalPage();
+    if (page === 'soumu-analysis' && typeof renderDeptAnalysisPage === 'function') renderDeptAnalysisPage('総務課');
+    if (page === 'houmu-analysis' && typeof renderDeptAnalysisPage === 'function') renderDeptAnalysisPage('法務課');
   }
   document.querySelectorAll('.page-tab').forEach(btn=>{
     btn.addEventListener('click', ()=> showPage(btn.dataset.page));
